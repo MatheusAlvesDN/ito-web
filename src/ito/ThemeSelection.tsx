@@ -1,434 +1,239 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, Check, Play, Plus, Trash2, X, Star, Sparkles, Key } from 'lucide-react';
+import { ChevronLeft, Check, Settings as SettingsIcon, Info } from 'lucide-react';
 import { THEMES, type Theme } from './data';
 import { triggerVibration } from '../utils/syncService';
-import { generateItoTheme } from '../utils/geminiService';
-import { toast } from 'sonner';
+import { SegmentedControl } from '../components/common/SegmentedControl';
+import { Stepper } from '../components/common/Stepper';
+import { TagChip } from '../components/common/TagChip';
 
 type Props = {
   onBack: () => void;
-  onStart: (themes: Theme[], saboteurMode: boolean) => void;
+  onStart: (
+    themes: Theme[],
+    saboteurMode: boolean,
+    config: {
+      connectionMode: 'local' | 'online';
+      scale: number;
+      timeLimit: number;
+      lives: number;
+    }
+  ) => void;
 };
 
 export default function ThemeSelectionClassic({ onBack, onStart }: Props) {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>(['free', 'food']);
   const [customThemes, setCustomThemes] = useState<Theme[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [saboteurMode, setSaboteurMode] = useState(false);
+  const [saboteurMode] = useState(false);
 
-  // Form States
-  const [themeName, setThemeName] = useState('');
-  const [themeDescription, setThemeDescription] = useState('');
-  const [questionsText, setQuestionsText] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [connectionMode, setConnectionMode] = useState<'local' | 'online'>('local');
+  const [scale, setScale] = useState<50 | 100 | 1000>(100);
+  const [timeLimit, setTimeLimit] = useState<0 | 2 | 5>(3 as any); // using 3 to map to 5 conceptually, but let's stick to 2/5/0
+  const [lives, setLives] = useState(3);
 
-  // AI Generation States
-  const [activeTab, setActiveTab] = useState<'manual' | 'ai'>('manual');
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('ito_gemini_api_key') || '');
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [showApiKeyInput, setShowApiKeyInput] = useState(() => !localStorage.getItem('ito_gemini_api_key'));
+  useEffect(() => {
+    // Normalizar tempo inicial
+    setTimeLimit(0);
+  }, []);
 
-  const handleGenerateWithAI = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-
-    if (!apiKey.trim()) {
-      setErrorMsg('Insira uma chave de API do Gemini para prosseguir.');
-      return;
-    }
-
-    if (!aiPrompt.trim()) {
-      setErrorMsg('Descreva sobre o que você deseja que o tema seja.');
-      return;
-    }
-
-    setIsGenerating(true);
-    triggerVibration(100);
-    
-    // Salva a chave localmente
-    localStorage.setItem('ito_gemini_api_key', apiKey.trim());
-    setShowApiKeyInput(false);
-
-    try {
-      const generated = await generateItoTheme(aiPrompt.trim(), apiKey.trim());
-      
-      if (generated.name) setThemeName(generated.name);
-      if (generated.description) setThemeDescription(generated.description);
-      if (generated.questions && Array.isArray(generated.questions)) {
-        setQuestionsText(generated.questions.join('\n'));
-      }
-      
-      toast.success('Tema gerado com sucesso! Revise os campos e clique em Salvar.');
-      setActiveTab('manual'); // Volta para o manual para revisão
-      setAiPrompt('');
-    } catch (err: any) {
-      console.error(err);
-      setErrorMsg(err.message || 'Ocorreu um erro ao gerar o tema com a Inteligência Artificial.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  // Carrega do localStorage
   useEffect(() => {
     const saved = localStorage.getItem('ito_custom_themes');
     if (saved) {
       try {
         setCustomThemes(JSON.parse(saved));
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) {}
     }
   }, []);
 
   const toggleTheme = (id: string) => {
     triggerVibration(50);
-    if (id === 'free') {
-      setSelectedIds((prev) => (prev.includes('free') ? [] : ['free']));
-      return;
-    }
     setSelectedIds((prev) => {
-      let next = [...prev];
-      if (next.includes('free')) next = [];
-      if (next.includes(id)) next = next.filter((tid) => tid !== id);
-      else next.push(id);
-      return next;
+      if (prev.includes(id)) return prev.filter((tid) => tid !== id);
+      return [...prev, id];
     });
-  };
-
-  const handleDeleteTheme = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    triggerVibration([50, 50]);
-    const filtered = customThemes.filter(t => t.id !== id);
-    setCustomThemes(filtered);
-    localStorage.setItem('ito_custom_themes', JSON.stringify(filtered));
-    localStorage.removeItem('ito_custom_questions_' + id);
-
-    setSelectedIds(prev => prev.filter(tid => tid !== id));
-  };
-
-  const handleCreateTheme = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-
-    if (!themeName.trim()) {
-      setErrorMsg('O nome do tema é obrigatório.');
-      return;
-    }
-
-    const items = questionsText
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-
-    if (items.length === 0) {
-      setErrorMsg('Insira pelo menos 1 pergunta/desafio (uma por linha).');
-      return;
-    }
-
-    const themeId = `custom_theme_${Date.now()}`;
-    const newTheme: Theme = {
-      id: themeId,
-      name: themeName.trim(),
-      description: themeDescription.trim() || 'Tema personalizado criado por você.',
-      color: 'bg-yellow-100',
-      textColor: 'text-yellow-900',
-      buttonColor: 'bg-yellow-450 hover:bg-yellow-400',
-      icon: Star
-    };
-
-    localStorage.setItem('ito_custom_questions_' + themeId, JSON.stringify(items));
-    
-    const updatedThemes = [...customThemes, newTheme];
-    setCustomThemes(updatedThemes);
-    localStorage.setItem('ito_custom_themes', JSON.stringify(updatedThemes));
-
-    // Seleciona automaticamente o novo tema
-    setSelectedIds([...selectedIds, themeId]);
-
-    // Reset form e fecha modal
-    setThemeName('');
-    setThemeDescription('');
-    setQuestionsText('');
-    setShowModal(false);
-    triggerVibration(100);
   };
 
   const allThemes = [...THEMES, ...customThemes];
   const selectedThemes = allThemes.filter((t) => selectedIds.includes(t.id));
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-955 relative h-full overflow-hidden text-slate-100 font-sans">
-      {/* Header Fixo */}
-      <div className="p-4 flex items-center bg-slate-900/60 border-b border-white/5 backdrop-blur-md sticky top-0 z-20 shadow-sm pt-8 md:pt-4 safe-top shrink-0">
-        <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-yellow-400 transition-colors">
-          <ChevronLeft size={24} />
+    <div className="flex-1 flex flex-col bg-[#F5F7FB] relative h-full overflow-hidden text-party-dark font-sans">
+      
+      {/* Header Minimalista */}
+      <div className="px-6 py-4 flex items-center justify-between bg-[#F5F7FB]/90 backdrop-blur-xl sticky top-0 z-20 safe-top shrink-0 border-b border-slate-200/50">
+        <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors">
+          <ChevronLeft size={24} className="text-slate-600" />
         </button>
-        <div className="ml-4">
-          <h2 className="font-black text-xl text-white font-outfit">Temas (Clássico)</h2>
-          <p className="text-xs text-slate-450 font-medium">Escolha sobre o que vamos debater</p>
-        </div>
+        <h2 className="font-bold text-lg text-slate-800">Configurar Jogo</h2>
+        <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors">
+          <SettingsIcon size={20} className="text-slate-600" />
+        </button>
       </div>
 
-      {/* Área Central Rolável */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-4">
-        {allThemes.map((theme) => {
-          const Icon = theme.icon;
-          const isSelected = selectedIds.includes(theme.id);
-          const isCustom = theme.id.startsWith('custom_theme_');
-
-          return (
-            <div
-              key={theme.id}
-              onClick={() => toggleTheme(theme.id)}
-              className={`w-full group text-left relative overflow-hidden rounded-3xl p-5 shadow-lg transition-all duration-200 border-2 flex items-center gap-4 cursor-pointer ${
-                isSelected 
-                  ? 'bg-slate-900 border-yellow-400 ring-4 ring-yellow-900/30 scale-[1.01]' 
-                  : 'bg-slate-900/50 border-white/5 hover:border-slate-800'
-              }`}
-            >
-              <div className={`p-3.5 rounded-2xl ${theme.color} text-slate-950 shadow-sm shrink-0 opacity-90`}>
-                <Icon size={24} className={isCustom ? 'text-yellow-600' : 'text-slate-955'} />
-              </div>
-              <div className="flex-1 pr-8">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h3 className="font-black text-lg text-white font-outfit">{theme.name}</h3>
-                  {isCustom && (
-                    <span className="bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider font-outfit">
-                      Custom
-                    </span>
-                  )}
-                </div>
-                <p className="text-slate-450 font-medium text-xs sm:text-sm leading-relaxed">{theme.description}</p>
-              </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                {isCustom && (
-                  <button
-                    onClick={(e) => handleDeleteTheme(theme.id, e)}
-                    className="p-2 bg-red-955/20 border border-red-500/20 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all scale-95 opacity-85 hover:opacity-100 z-25"
-                    title="Excluir tema"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
-                
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors z-20 ${isSelected ? 'bg-yellow-400 border-yellow-400' : 'border-slate-700 bg-slate-900'}`}>
-                  {isSelected && <Check size={14} className="text-white stroke-[3px]" />}
-                </div>
-              </div>
+      <div 
+        className="flex-1 overflow-y-auto"
+        style={{ paddingBottom: 'max(8rem, calc(7rem + env(safe-area-inset-bottom, 0px)))' }}
+      >
+        
+        {/* Game Identity Card */}
+        <div className="px-6 pt-6 mb-8">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100/50 rounded-3xl p-5 flex items-center gap-4 shadow-sm">
+            <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-blue-100 flex flex-col items-center justify-center shrink-0">
+               <span className="text-xs font-black leading-none text-party-blue">1 2 3</span>
+               <span className="text-[10px] font-bold mt-1 text-party-blue">ITO</span>
             </div>
-          );
-        })}
-
-        {/* Card do Modo Sabotador */}
-        <div className="p-5 rounded-3xl bg-slate-900/60 border border-white/5 shadow-xl flex items-center justify-between gap-4 mt-2">
-          <div className="flex-1">
-            <h4 className="font-black text-base text-white font-outfit flex items-center gap-1.5">
-              😈 Modo Sabotador
-            </h4>
-            <p className="text-slate-450 text-[11px] font-medium leading-relaxed mt-0.5">
-              Um jogador é secretamente escolhido para sabotar o grupo sem ser descoberto. Ao final, tentem adivinhar quem é!
-            </p>
+            <div className="flex-1 min-w-0">
+               <h3 className="font-bold text-[17px] text-slate-800">Ito Clássico</h3>
+               <p className="text-xs font-medium text-slate-500 mb-2">Criador da sala: Você</p>
+               <TagChip label="Sala #4920" variant="primary" />
+            </div>
           </div>
-          <button
-            onClick={() => { setSaboteurMode(!saboteurMode); triggerVibration(60); }}
-            className={`w-12 h-6 rounded-full p-1 transition-all duration-200 shrink-0 ${saboteurMode ? 'bg-yellow-450' : 'bg-slate-800'}`}
-          >
-            <div className={`w-4 h-4 rounded-full bg-slate-950 transition-all duration-200 ${saboteurMode ? 'translate-x-6' : 'translate-x-0'}`} />
-          </button>
         </div>
 
-        {/* Botão de Novo Tema */}
-        <button
-          onClick={() => { setShowModal(true); triggerVibration(50); }}
-          className="w-full p-5 rounded-3xl border-2 border-dashed border-yellow-500/30 hover:border-yellow-400 hover:bg-yellow-500/[0.02] text-center text-yellow-400 font-bold transition-all flex items-center justify-center gap-2 font-outfit mt-2"
-        >
-          <Plus size={20} />
-          <span>CRIAR TEMA PERSONALIZADO</span>
-        </button>
-      </div>
+        {/* 1. Modo de Conexão */}
+        <div className="px-6 mb-8">
+           <h3 className="text-base font-bold text-slate-800 mb-3 ml-1">1. Modo de Conexão</h3>
+           <SegmentedControl
+              options={[
+                { value: 'local', label: '📱 Local' },
+                { value: 'online', label: '🌐 Online' }
+              ]}
+              value={connectionMode}
+              onChange={(val) => setConnectionMode(val)}
+           />
+           <div className="mt-3 flex items-start gap-2 bg-blue-50/50 border border-blue-100/50 p-3 rounded-2xl">
+              <Info size={16} className="text-blue-500 mt-0.5 shrink-0" />
+              <p className="text-xs font-medium text-blue-700/80 leading-relaxed">
+                {connectionMode === 'local' 
+                  ? 'No modo local, todos jogam no mesmo aparelho. Passem o celular de mão em mão!'
+                  : 'No modo online, cada jogador usa o seu celular.'}
+              </p>
+           </div>
+        </div>
 
-      {/* Rodapé Fixo Flex */}
-      <div className="p-6 bg-slate-955 border-t border-white/5 shrink-0 safe-bottom shadow-[0_-8px_24px_rgba(0,0,0,0.2)]">
-        <button
-          onClick={() => onStart(selectedThemes, saboteurMode)}
-          disabled={selectedIds.length === 0}
-          className="w-full bg-yellow-400 hover:bg-yellow-350 disabled:bg-slate-900 disabled:text-slate-655 text-black font-black text-lg py-4 rounded-2xl shadow-md hover:shadow-lg disabled:shadow-none transition-all duration-150 active:scale-95 disabled:active:scale-100 flex items-center justify-center gap-2 font-outfit"
-        >
-          <span>INICIAR JOGO</span> <Play size={20} fill="currentColor" />
-        </button>
-      </div>
+        {/* 2. Temas */}
+        <div className="px-6 mb-8">
+           <div className="flex justify-between items-center mb-3 ml-1">
+              <h3 className="text-base font-bold text-slate-800">2. Escolha dos Temas</h3>
+              <span className="text-[11px] font-bold text-slate-400 bg-white px-2 py-1 rounded-full shadow-sm border border-slate-100">
+                {selectedIds.length} selecionado{selectedIds.length !== 1 && 's'}
+              </span>
+           </div>
 
-      {/* Modal para Criação de Tema Customizado */}
-      {showModal && (
-        <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col justify-end sm:justify-center p-4">
-          <div className="bg-slate-900 border border-white/10 rounded-t-[32px] sm:rounded-[32px] p-6 max-w-sm w-full mx-auto shadow-2xl relative animate-fade-in-scale max-h-[85vh] overflow-y-auto">
-            <button 
-              onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 p-2 bg-white/5 rounded-full hover:bg-white/10 text-slate-300 z-10"
-            >
-              <X size={20} />
-            </button>
-            
-            <div className="mb-4">
-              <h3 className="text-xl font-black text-white font-outfit">Novo Tema (Clássico)</h3>
-              <p className="text-slate-455 text-xs mt-0.5 font-medium">Crie seus próprios debates de comparação.</p>
-            </div>
+           <div className="flex flex-col gap-3">
+             {THEMES.map((theme, index) => {
+               const isSelected = selectedIds.includes(theme.id);
+               // Mock difficulties based on theme
+               const difficulty = index % 3 === 0 ? 'Fácil' : index % 3 === 1 ? 'Médio' : 'Difícil';
+               const variant = difficulty === 'Fácil' ? 'success' : difficulty === 'Médio' ? 'warning' : 'danger';
+               
+               return (
+                 <div 
+                   key={theme.id}
+                   onClick={() => toggleTheme(theme.id)}
+                   className={`bg-white rounded-3xl p-4 flex gap-4 cursor-pointer transition-all shadow-card border ${isSelected ? 'border-party-blue ring-1 ring-party-blue/20' : 'border-slate-100'}`}
+                 >
+                    <div className="pt-1">
+                       <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors border ${isSelected ? 'bg-party-blue border-party-blue text-white' : 'border-slate-300 bg-slate-50'}`}>
+                          {isSelected && <Check size={14} strokeWidth={3} />}
+                       </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                       <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-bold text-[15px] text-slate-800">{theme.name}</h4>
+                          <TagChip label={difficulty} variant={variant} />
+                       </div>
+                       <p className="text-xs text-slate-500 font-medium leading-relaxed mb-3">
+                          {theme.description}
+                       </p>
+                       <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+                         <p className="text-[10px] font-bold text-slate-500 italic">
+                            <span className="text-party-blue">Exemplo:</span> 1 = Muito ruim, 100 = Muito bom
+                         </p>
+                       </div>
+                    </div>
+                 </div>
+               );
+             })}
+           </div>
+        </div>
 
-            {errorMsg && (
-              <div className="p-3 bg-red-955/20 border border-red-500/20 text-red-400 rounded-xl text-xs font-bold mb-4 font-outfit text-center">
-                {errorMsg}
+        {/* 3. Configurações da Partida */}
+        <div className="px-6 mb-8">
+           <h3 className="text-base font-bold text-slate-800 mb-4 ml-1">3. Configuração da Partida</h3>
+           
+           <div className="bg-white rounded-[2rem] p-5 shadow-card border border-slate-100 flex flex-col gap-6">
+              
+              {/* Escala */}
+              <div>
+                <h4 className="font-bold text-sm text-slate-700 mb-3">Escala de Números da Rodada</h4>
+                <SegmentedControl
+                  options={[
+                    { value: 50, label: '1-50' },
+                    { value: 100, label: '1-100 (Padrão)' },
+                    { value: 1000, label: '1-1000 (Insano)' }
+                  ]}
+                  value={scale}
+                  onChange={(val) => setScale(val)}
+                />
               </div>
-            )}
 
-            {/* Abas */}
-            <div className="flex bg-slate-955 p-1 rounded-xl mb-4 border border-white/5">
-              <button
-                type="button"
-                onClick={() => { setActiveTab('manual'); setErrorMsg(''); }}
-                className={`flex-1 py-2 rounded-lg font-bold text-xs transition-all uppercase tracking-wider font-outfit ${activeTab === 'manual' ? 'bg-yellow-450 text-black shadow-sm' : 'text-slate-400 hover:text-white'}`}
-                disabled={isGenerating}
-              >
-                ✍️ Manual
-              </button>
-              <button
-                type="button"
-                onClick={() => { setActiveTab('ai'); setErrorMsg(''); }}
-                className={`flex-1 py-2 rounded-lg font-bold text-xs transition-all uppercase tracking-wider font-outfit flex items-center justify-center gap-1 ${activeTab === 'ai' ? 'bg-yellow-450 text-black shadow-sm' : 'text-slate-400 hover:text-white'}`}
-                disabled={isGenerating}
-              >
-                <Sparkles size={12} /> Gerar com IA
-              </button>
-            </div>
+              {/* Tempo */}
+              <div>
+                <h4 className="font-bold text-sm text-slate-700 mb-3">Tempo de Discussão</h4>
+                <SegmentedControl
+                  options={[
+                    { value: 0, label: 'Sem limite' },
+                    { value: 2, label: '2 Min' },
+                    { value: 5, label: '5 Min' }
+                  ]}
+                  value={timeLimit}
+                  onChange={(val) => setTimeLimit(val)}
+                />
+              </div>
 
-            {activeTab === 'ai' ? (
-              <form onSubmit={handleGenerateWithAI} className="space-y-4">
-                <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-outfit flex items-center gap-1">
-                    <Key size={10} /> Chave do Gemini
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                    className="text-[9px] font-bold text-yellow-500 hover:text-yellow-400 font-outfit uppercase"
-                  >
-                    {showApiKeyInput ? 'Ocultar' : 'Alterar'}
-                  </button>
-                </div>
-
-                {showApiKeyInput && (
-                  <div className="bg-slate-955/50 p-3 rounded-2xl border border-white/5">
-                    <label className="block text-[9px] font-black uppercase tracking-wider text-slate-450 mb-1 font-outfit">Sua Gemini API Key</label>
-                    <input
-                      type="password"
-                      placeholder="Cole sua API Key aqui (começa com AIza)"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      className="w-full bg-slate-955 border border-white/10 px-4 py-3 rounded-xl text-white font-mono placeholder:text-slate-700 outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-900/10 transition-all text-xs"
+              {/* Vidas */}
+              <div className="pt-2 border-t border-slate-100">
+                 <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-700">Vidas da Equipe</h4>
+                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">{lives} vida{lives !== 1 && 's'} padrão</p>
+                    </div>
+                    <Stepper 
+                      value={lives}
+                      onChange={setLives}
+                      min={1}
+                      max={5}
                     />
-                    <p className="text-[9px] text-slate-455 mt-1 font-medium leading-relaxed">
-                      Sua chave fica salva apenas no seu navegador (localStorage) e é enviada diretamente ao Google.
-                    </p>
-                  </div>
-                )}
+                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1 font-outfit">O que você quer que o tema seja?</label>
-                  <textarea
-                    placeholder="Ex: Viagem no tempo, memes da internet, programação em javascript, coisas engraçadas de escritório..."
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    rows={4}
-                    className="w-full bg-slate-955 border border-white/10 px-4 py-3 rounded-xl text-white font-bold placeholder:text-slate-700 outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-900/10 transition-all text-sm resize-none font-sans"
-                    disabled={isGenerating}
-                  />
-                </div>
-
-                <div className="pt-2 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 py-3.5 bg-slate-955 border border-white/10 hover:bg-slate-855 text-slate-350 font-bold rounded-xl text-sm transition-all"
-                    disabled={isGenerating}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isGenerating}
-                    className="flex-1 py-3.5 bg-yellow-450 hover:bg-yellow-400 disabled:bg-slate-800 disabled:text-slate-600 text-black font-black rounded-xl text-sm transition-all shadow-md font-outfit flex items-center justify-center gap-1.5"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                        <span>Gerando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={16} />
-                        <span>Gerar Tema</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleCreateTheme} className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1 font-outfit">Nome do Tema</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Colegas de Trabalho, Filosofia"
-                    value={themeName}
-                    onChange={(e) => setThemeName(e.target.value.slice(0, 24))}
-                    className="w-full bg-slate-955 border border-white/10 px-4 py-3 rounded-xl text-white font-bold placeholder:text-slate-700 outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-900/10 transition-all text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1 font-outfit">Descrição (Opcional)</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Debates internos e piadas do escritório..."
-                    value={themeDescription}
-                    onChange={(e) => setThemeDescription(e.target.value.slice(0, 60))}
-                    className="w-full bg-slate-955 border border-white/10 px-4 py-3 rounded-xl text-white font-bold placeholder:text-slate-700 outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-900/10 transition-all text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1 font-outfit">Perguntas/Desafios (Um por linha)</label>
-                  <textarea
-                    placeholder="Ex:&#10;O quão legal é essa piada?&#10;Quem do grupo come mais pizza?&#10;Nível de perigo de esquecer o aniversário da namorada"
-                    value={questionsText}
-                    onChange={(e) => setQuestionsText(e.target.value)}
-                    rows={5}
-                    className="w-full bg-slate-955 border border-white/10 px-4 py-3 rounded-xl text-white font-bold placeholder:text-slate-700 outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-900/10 transition-all text-sm resize-none font-sans"
-                  />
-                </div>
-
-                <div className="pt-2 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 py-3.5 bg-slate-955 border border-white/10 hover:bg-slate-855 text-slate-350 font-bold rounded-xl text-sm transition-all"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-3.5 bg-yellow-450 hover:bg-yellow-400 text-black font-black rounded-xl text-sm transition-all shadow-md font-outfit"
-                  >
-                    Salvar Tema
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+           </div>
         </div>
-      )}
+
+        <div className="px-6 mb-8">
+           <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex items-start gap-3">
+              <span className="text-xl">💡</span>
+              <p className="text-xs text-amber-800/80 font-medium leading-relaxed">
+                <strong className="text-amber-800">Dica Rápida:</strong> Em partidas com 6+ jogadores, recomendamos usar a escala 1-1000 para evitar números repetidos.
+              </p>
+           </div>
+        </div>
+
+      </div>
+
+      <div 
+        className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 px-6 pt-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] pb-safe-bottom"
+        style={{ paddingBottom: 'max(1.25rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))' }}
+      >
+         <button
+           onClick={() => onStart(selectedThemes, saboteurMode, { connectionMode, scale, timeLimit, lives })}
+           disabled={selectedIds.length === 0}
+           className="w-full bg-party-blue hover:bg-blue-700 text-white font-bold text-base py-4 rounded-full shadow-[0_8px_20px_rgba(37,99,235,0.25)] transition-all active:scale-95 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+         >
+           Avançar para Jogadores ➔
+         </button>
+      </div>
+
     </div>
   );
 }

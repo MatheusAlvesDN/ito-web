@@ -1,21 +1,22 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, Plus, Trash2, UserSearch, X, Sparkles, Key } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2, X, Sparkles, Key, ScanFace, ArrowRight, Check } from 'lucide-react';
 import { WHOAMI_THEMES, type WhoAmITheme } from './data';
 import { triggerVibration } from '../utils/syncService';
 import { generateWhoAmITheme } from '../utils/geminiService';
 import { toast } from 'sonner';
+import { TagChip } from '../components/common/TagChip';
 
-type Props = {
+interface Props {
   onBack: () => void;
   onStart: (themes: WhoAmITheme[]) => void;
-};
+}
 
 export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(['cultura-pop']));
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(['celebrities']));
   const [customThemes, setCustomThemes] = useState<WhoAmITheme[]>([]);
   const [showModal, setShowModal] = useState(false);
 
-  // Form States
+  // Form states
   const [themeName, setThemeName] = useState('');
   const [themeDescription, setThemeDescription] = useState('');
   const [personalitiesText, setPersonalitiesText] = useState('');
@@ -45,7 +46,6 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
     setIsGenerating(true);
     triggerVibration(100);
     
-    // Salva a chave localmente
     localStorage.setItem('ito_gemini_api_key', apiKey.trim());
     setShowApiKeyInput(false);
 
@@ -54,29 +54,34 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
       
       if (generated.name) setThemeName(generated.name);
       if (generated.description) setThemeDescription(generated.description);
-      if (generated.personalities && Array.isArray(generated.personalities)) {
+      if (generated.personalities && generated.personalities.length > 0) {
         setPersonalitiesText(generated.personalities.join('\n'));
+        setActiveTab('manual');
+        toast.success(`Tema "${generated.name}" gerado com sucesso!`);
+      } else {
+        setErrorMsg('A IA não retornou personalidades válidas. Tente novamente.');
       }
-      
-      toast.success('Tema gerado com sucesso! Revise os campos e clique em Salvar.');
-      setActiveTab('manual'); // Volta para o manual para revisão
-      setAiPrompt('');
     } catch (err: any) {
-      console.error(err);
-      setErrorMsg(err.message || 'Ocorreu um erro ao gerar o tema com a Inteligência Artificial.');
+      setErrorMsg(err.message || 'Erro ao gerar tema com IA. Verifique sua chave API.');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Carrega temas customizados do localStorage
   useEffect(() => {
     const saved = localStorage.getItem('whoami_custom_themes');
     if (saved) {
       try {
-        setCustomThemes(JSON.parse(saved));
-      } catch (err) {
-        console.error('Erro ao carregar temas customizados:', err);
+        const parsed = JSON.parse(saved);
+        const mapped = parsed.map((t: any) => ({
+          ...t,
+          icon: ScanFace,
+          color: t.color || 'bg-orange-50',
+          textColor: t.textColor || 'text-orange-500',
+        }));
+        setCustomThemes(mapped);
+      } catch (e) {
+        console.error('Falha ao carregar temas salvos', e);
       }
     }
   }, []);
@@ -94,33 +99,29 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
 
   const handleDeleteTheme = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    triggerVibration([50, 50]);
-    const filtered = customThemes.filter(t => t.id !== id);
-    setCustomThemes(filtered);
-    localStorage.setItem('whoami_custom_themes', JSON.stringify(filtered));
-    localStorage.removeItem('whoami_custom_personalities_' + id);
-
+    const updated = customThemes.filter(t => t.id !== id);
+    setCustomThemes(updated);
+    localStorage.setItem('whoami_custom_themes', JSON.stringify(updated));
     const newSet = new Set(selectedIds);
     newSet.delete(id);
     setSelectedIds(newSet);
+    triggerVibration(100);
+    toast.info('Tema excluído com sucesso');
   };
 
   const handleCreateTheme = (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
-
     if (!themeName.trim()) {
       setErrorMsg('O nome do tema é obrigatório.');
       return;
     }
-
-    const items = personalitiesText
+    const personalities = personalitiesText
       .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
 
-    if (items.length < 5) {
-      setErrorMsg('Insira pelo menos 5 personagens (um por linha).');
+    if (personalities.length < 5) {
+      setErrorMsg('Adicione pelo menos 5 personalidades (uma por linha).');
       return;
     }
 
@@ -128,48 +129,58 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
     const newTheme: WhoAmITheme = {
       id: themeId,
       name: themeName.trim(),
-      description: themeDescription.trim() || 'Tema personalizado criado por você.',
-      color: 'bg-emerald-500/10',
-      textColor: 'text-emerald-400',
-      icon: UserSearch,
-      personalities: items // mantido para compatibilidade local
+      description: themeDescription.trim() || 'Tema customizado criado por você',
+      personalities,
+      icon: ScanFace,
+      color: 'bg-orange-50',
+      textColor: 'text-orange-500',
     };
-
-    // Salva personagens separadamente e também no tema para fallback rápido
-    localStorage.setItem('whoami_custom_personalities_' + themeId, JSON.stringify(items));
     
     const updatedThemes = [...customThemes, newTheme];
     setCustomThemes(updatedThemes);
     localStorage.setItem('whoami_custom_themes', JSON.stringify(updatedThemes));
 
-    // Seleciona automaticamente o novo tema criado
     const newSet = new Set(selectedIds);
     newSet.add(themeId);
     setSelectedIds(newSet);
 
-    // Reset form e fecha modal
     setThemeName('');
     setThemeDescription('');
     setPersonalitiesText('');
     setShowModal(false);
     triggerVibration(100);
+    toast.success('Novo tema criado!');
   };
 
   const allThemes = [...WHOAMI_THEMES, ...customThemes];
   const selectedThemes = allThemes.filter(t => selectedIds.has(t.id));
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-955 relative h-full overflow-hidden text-slate-100 font-sans">
+    <div className="flex-1 flex flex-col bg-[#F5F7FB] relative h-full overflow-hidden text-slate-800 font-sans">
       {/* Header Fixo */}
-      <div className="p-4 flex items-center bg-slate-900/60 border-b border-white/5 backdrop-blur-md sticky top-0 z-20 shadow-sm pt-8 md:pt-4 safe-top shrink-0">
-        <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-emerald-400 transition-colors">
-          <ChevronLeft size={24} />
-        </button>
-        <span className="ml-4 font-black text-xl text-white font-outfit">Temas (Quem Sou Eu)</span>
+      <div className="px-6 py-4 flex items-center justify-between bg-[#F5F7FB]/90 border-b border-slate-200/50 backdrop-blur-xl sticky top-0 z-20 pt-safe shrink-0">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={onBack} 
+            aria-label="Voltar"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 text-slate-600 hover:text-orange-500 hover:bg-slate-50 transition-colors"
+          >
+            <ChevronLeft size={22} />
+          </button>
+          <div>
+            <h1 className="font-bold text-lg text-slate-800 leading-tight">Quem Sou Eu?</h1>
+            <p className="text-xs text-slate-500 font-medium">Categorias de personagens</p>
+          </div>
+        </div>
+
+        <TagChip label={`${selectedIds.size} selecionado(s)`} variant={selectedIds.size > 0 ? 'warning' : 'neutral'} />
       </div>
 
       {/* Área Central Rolável */}
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+      <div 
+        className="flex-1 overflow-y-auto p-6 space-y-3.5 max-w-md mx-auto w-full"
+        style={{ paddingBottom: 'max(8rem, calc(7rem + env(safe-area-inset-bottom, 0px)))' }}
+      >
         {allThemes.map((theme) => {
           const isSelected = selectedIds.has(theme.id);
           const Icon = theme.icon;
@@ -179,32 +190,32 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
             <div
               key={theme.id}
               onClick={() => toggleTheme(theme.id)}
-              className={`p-5 rounded-3xl border-2 text-left transition-all duration-200 flex items-center gap-4 shadow-md cursor-pointer relative group ${
+              className={`w-full group text-left relative overflow-hidden rounded-3xl p-5 shadow-card hover:shadow-soft transition-all duration-200 border-2 flex items-center gap-4 cursor-pointer bg-white ${
                 isSelected 
-                  ? 'border-emerald-500 bg-slate-900 ring-4 ring-emerald-900/30 scale-[1.01]' 
-                  : 'border-white/5 bg-slate-900/40 hover:bg-slate-900 opacity-80 hover:opacity-100'
+                  ? 'border-orange-500 ring-2 ring-orange-500/20' 
+                  : 'border-slate-100 hover:border-slate-200'
               }`}
             >
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${theme.color} ${theme.textColor} shadow-inner`}>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-orange-50 text-orange-500 shadow-xs">
                 <Icon size={24} />
               </div>
-              <div className="flex-1 pr-8">
+              <div className="flex-1 pr-2 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <h3 className="text-lg font-black text-white font-outfit">{theme.name}</h3>
+                  <h3 className="font-bold text-base text-slate-800 truncate">{theme.name}</h3>
                   {isCustom && (
-                    <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider font-outfit">
+                    <span className="bg-orange-50 text-orange-600 border border-orange-100 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">
                       Custom
                     </span>
                   )}
                 </div>
-                <p className="text-xs sm:text-sm text-slate-450 leading-relaxed font-medium">{theme.description}</p>
+                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium line-clamp-2">{theme.description}</p>
               </div>
               
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 {isCustom && (
                   <button
                     onClick={(e) => handleDeleteTheme(theme.id, e)}
-                    className="p-2 bg-red-950/20 border border-red-500/20 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all scale-95 opacity-85 hover:opacity-100"
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                     title="Excluir tema"
                   >
                     <Trash2 size={16} />
@@ -212,9 +223,9 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
                 )}
                 
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                  isSelected ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-650'
+                  isSelected ? 'border-orange-500 bg-orange-500 text-white' : 'border-slate-300 bg-white'
                 }`}>
-                  {isSelected && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                  {isSelected && <Check size={14} className="text-white stroke-[3px]" />}
                 </div>
               </div>
             </div>
@@ -224,57 +235,58 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
         {/* Botão para Criar Tema */}
         <button
           onClick={() => { setShowModal(true); triggerVibration(50); }}
-          className="p-5 rounded-3xl border-2 border-dashed border-emerald-500/30 hover:border-emerald-500 hover:bg-emerald-500/[0.02] text-center text-emerald-400 font-bold transition-all flex items-center justify-center gap-2 font-outfit mt-2"
+          className="w-full p-4 rounded-3xl border-2 border-dashed border-orange-200 hover:border-orange-400 bg-orange-50/30 hover:bg-orange-50 text-center text-orange-700 font-bold transition-all flex items-center justify-center gap-2 text-sm shadow-xs mt-2"
         >
-          <Plus size={20} />
-          <span>CRIAR TEMA PERSONALIZADO</span>
+          <Plus size={18} />
+          <span>Criar Categoria Personalizada ou com IA</span>
         </button>
       </div>
 
-      {/* Rodapé Fixo */}
-      <div className="p-6 bg-slate-955 border-t border-white/5 shrink-0 safe-bottom shadow-[0_-8px_24px_rgba(0,0,0,0.2)]">
-        <button
-          onClick={() => onStart(selectedThemes)}
-          disabled={selectedThemes.length === 0}
-          className="w-full bg-emerald-500 hover:bg-emerald-455 disabled:bg-slate-900 disabled:text-slate-650 disabled:shadow-none text-white font-black text-lg py-4 rounded-2xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 font-outfit"
-        >
-          <span>COMEÇAR JOGO</span> <ChevronLeft className="rotate-180" size={24} />
-        </button>
-        {selectedThemes.length === 0 && (
-          <p className="text-center text-red-400 text-xs mt-3 font-bold font-outfit animate-pulse">
-            Selecione pelo menos um tema
-          </p>
-        )}
+      {/* Rodapé Fixo com Safe Area */}
+      <div 
+        className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 px-6 pt-3 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] pb-safe-bottom"
+        style={{ paddingBottom: 'max(1.25rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))' }}
+      >
+        <div className="max-w-md mx-auto w-full">
+          <button
+            onClick={() => onStart(selectedThemes)}
+            disabled={selectedThemes.length === 0}
+            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold text-base py-4 rounded-full shadow-[0_8px_20px_rgba(249,115,22,0.25)] disabled:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+          >
+            <span>Iniciar Partida</span>
+            <ArrowRight size={18} />
+          </button>
+        </div>
       </div>
 
-      {/* Modal para Criação de Tema Customizado (Aparência Premium Glassmorphism) */}
+      {/* Modal para Criação de Tema Customizado */}
       {showModal && (
-        <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col justify-end sm:justify-center p-4">
-          <div className="bg-slate-900 border border-white/10 rounded-t-[32px] sm:rounded-[32px] p-6 max-w-sm w-full mx-auto shadow-2xl relative animate-fade-in-scale max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end sm:justify-center p-4 animate-fade-in">
+          <div className="bg-white border border-slate-100 rounded-t-[32px] sm:rounded-[32px] p-6 max-w-sm w-full mx-auto shadow-2xl relative max-h-[88vh] overflow-y-auto">
             <button 
               onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 p-2 bg-white/5 rounded-full hover:bg-white/10 text-slate-300"
+              className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 text-slate-600 z-10"
             >
               <X size={20} />
             </button>
             
             <div className="mb-4">
-              <h3 className="text-xl font-black text-white font-outfit">Novo Tema</h3>
-              <p className="text-slate-450 text-xs mt-0.5 font-medium">Crie seus próprios personagens para adivinhar.</p>
+              <h3 className="text-xl font-bold text-slate-800">Nova Categoria</h3>
+              <p className="text-slate-500 text-xs mt-0.5 font-medium">Crie seus próprios personagens para adivinhar.</p>
             </div>
 
             {errorMsg && (
-              <div className="p-3 bg-red-950/20 border border-red-500/20 text-red-400 rounded-xl text-xs font-bold mb-4 font-outfit text-center">
+              <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold mb-4 text-center">
                 {errorMsg}
               </div>
             )}
 
             {/* Abas */}
-            <div className="flex bg-slate-950 p-1 rounded-xl mb-4 border border-white/5">
+            <div className="flex bg-slate-100 p-1 rounded-2xl mb-4">
               <button
                 type="button"
                 onClick={() => { setActiveTab('manual'); setErrorMsg(''); }}
-                className={`flex-1 py-2 rounded-lg font-bold text-xs transition-all uppercase tracking-wider font-outfit ${activeTab === 'manual' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-2 rounded-xl font-bold text-xs transition-all ${activeTab === 'manual' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                 disabled={isGenerating}
               >
                 ✍️ Manual
@@ -282,52 +294,52 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
               <button
                 type="button"
                 onClick={() => { setActiveTab('ai'); setErrorMsg(''); }}
-                className={`flex-1 py-2 rounded-lg font-bold text-xs transition-all uppercase tracking-wider font-outfit flex items-center justify-center gap-1 ${activeTab === 'ai' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${activeTab === 'ai' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                 disabled={isGenerating}
               >
-                <Sparkles size={12} /> Gerar com IA
+                <Sparkles size={14} /> Gerar com IA
               </button>
             </div>
 
             {activeTab === 'ai' ? (
               <form onSubmit={handleGenerateWithAI} className="space-y-4">
-                <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-outfit flex items-center gap-1">
-                    <Key size={10} /> Chave do Gemini
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                    <Key size={12} /> Chave do Gemini
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                    className="text-[9px] font-bold text-emerald-400 hover:text-emerald-355 font-outfit uppercase"
+                    className="text-xs font-bold text-orange-600 hover:text-orange-700"
                   >
                     {showApiKeyInput ? 'Ocultar' : 'Alterar'}
                   </button>
                 </div>
 
                 {showApiKeyInput && (
-                  <div className="bg-slate-950/50 p-3 rounded-2xl border border-white/5">
-                    <label className="block text-[9px] font-black uppercase tracking-wider text-slate-450 mb-1 font-outfit">Sua Gemini API Key</label>
+                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Sua Gemini API Key</label>
                     <input
                       type="password"
-                      placeholder="Cole sua API Key aqui (começa com AIza)"
+                      placeholder="Cole sua API Key aqui (AIza...)"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
-                      className="w-full bg-slate-950 border border-white/10 px-4 py-3 rounded-xl text-white font-mono placeholder:text-slate-700 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-900/10 transition-all text-xs"
+                      className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl text-slate-800 font-mono placeholder:text-slate-400 outline-none focus:border-orange-500 text-xs"
                     />
-                    <p className="text-[9px] text-slate-455 mt-1 font-medium leading-relaxed">
-                      Sua chave fica salva apenas no seu navegador (localStorage) e é enviada diretamente ao Google.
+                    <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                      Salva com segurança no seu navegador.
                     </p>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1 font-outfit">O que você quer que o tema seja?</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Qual o tema dos personagens?</label>
                   <textarea
                     placeholder="Ex: Personagens de ficção científica, deuses gregos, animais pré-históricos, atores de Hollywood..."
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
                     rows={4}
-                    className="w-full bg-slate-955 border border-white/10 px-4 py-3 rounded-xl text-white font-bold placeholder:text-slate-700 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-900/10 transition-all text-sm resize-none font-sans"
+                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-2xl text-slate-800 font-medium placeholder:text-slate-400 outline-none focus:bg-white focus:border-orange-500 text-sm resize-none"
                     disabled={isGenerating}
                   />
                 </div>
@@ -336,7 +348,7 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 py-3.5 bg-slate-950 border border-white/10 hover:bg-slate-850 text-slate-350 font-bold rounded-xl text-sm transition-all"
+                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs"
                     disabled={isGenerating}
                   >
                     Cancelar
@@ -344,16 +356,16 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
                   <button
                     type="submit"
                     disabled={isGenerating}
-                    className="flex-1 py-3.5 bg-emerald-500 hover:bg-emerald-450 disabled:bg-slate-800 disabled:text-slate-600 text-white font-black rounded-xl text-sm transition-all shadow-md font-outfit flex items-center justify-center gap-1.5"
+                    className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-200 text-white font-bold rounded-full text-xs shadow-sm flex items-center justify-center gap-1.5"
                   >
                     {isGenerating ? (
                       <>
-                        <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         <span>Gerando...</span>
                       </>
                     ) : (
                       <>
-                        <Sparkles size={16} />
+                        <Sparkles size={14} />
                         <span>Gerar Tema</span>
                       </>
                     )}
@@ -363,35 +375,35 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
             ) : (
               <form onSubmit={handleCreateTheme} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 font-outfit">Nome do Tema</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Nome da Categoria</label>
                   <input
                     type="text"
-                    placeholder="Ex: Colegas de Trabalho, Séries Anos 90"
+                    placeholder="Ex: Personagens de Anime"
                     value={themeName}
                     onChange={(e) => setThemeName(e.target.value.slice(0, 24))}
-                    className="w-full bg-slate-955 border border-white/10 px-4 py-3 rounded-xl text-white font-bold placeholder:text-slate-700 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-900/10 transition-all text-sm"
+                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-2xl text-slate-800 font-medium placeholder:text-slate-400 outline-none focus:bg-white focus:border-orange-500 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 font-outfit">Descrição (Opcional)</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Descrição</label>
                   <input
                     type="text"
-                    placeholder="Ex: Apenas personagens e piadas internas..."
+                    placeholder="Ex: Apenas animes famosos..."
                     value={themeDescription}
                     onChange={(e) => setThemeDescription(e.target.value.slice(0, 60))}
-                    className="w-full bg-slate-955 border border-white/10 px-4 py-3 rounded-xl text-white font-bold placeholder:text-slate-700 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-900/10 transition-all text-sm"
+                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-2xl text-slate-800 font-medium placeholder:text-slate-400 outline-none focus:bg-white focus:border-orange-500 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 font-outfit">Personagens (Um por linha, mín. 5)</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Personagens (um por linha)</label>
                   <textarea
-                    placeholder="Ex:&#10;Batman&#10;Neymar&#10;Seu Madruga&#10;Professor Girafales&#10;Harry Potter"
+                    placeholder="Ex:&#10;Goku&#10;Naruto&#10;Luffy&#10;Pikachu&#10;Sailor Moon"
                     value={personalitiesText}
                     onChange={(e) => setPersonalitiesText(e.target.value)}
                     rows={5}
-                    className="w-full bg-slate-955 border border-white/10 px-4 py-3 rounded-xl text-white font-bold placeholder:text-slate-700 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-900/10 transition-all text-sm resize-none font-sans"
+                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-2xl text-slate-800 font-medium placeholder:text-slate-400 outline-none focus:bg-white focus:border-orange-500 text-sm resize-none font-sans"
                   />
                 </div>
 
@@ -399,15 +411,15 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 py-3.5 bg-slate-955 border border-white/10 hover:bg-slate-850 text-slate-355 font-bold rounded-xl text-sm transition-all"
+                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3.5 bg-emerald-500 hover:bg-emerald-450 text-white font-black rounded-xl text-sm transition-all shadow-md font-outfit"
+                    className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full text-xs shadow-sm"
                   >
-                    Salvar Tema
+                    Salvar Categoria
                   </button>
                 </div>
               </form>

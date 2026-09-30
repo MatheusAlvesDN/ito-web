@@ -1,5 +1,6 @@
-import { ChevronLeft, Smartphone, Wifi } from 'lucide-react';
+import { ChevronLeft, Smartphone, Wifi, ChevronRight } from 'lucide-react';
 import type { GameMode } from '../../App';
+import { TagChip } from '../common/TagChip';
 
 export const ConnectionSelectionScreen = ({
   onBack,
@@ -12,64 +13,84 @@ export const ConnectionSelectionScreen = ({
   onSelectMultiplayer: () => void;
   gameMode?: GameMode;
 }) => {
-  const getThemeColor = () => {
-    if (gameMode === 'impostor') return 'text-purple-400 border-purple-500/20 hover:border-purple-400/85 hover:bg-purple-500/[0.02]';
-    if (gameMode === 'classic') return 'text-yellow-450 border-yellow-500/20 hover:border-yellow-400/85 hover:bg-yellow-500/[0.02]';
-    if (gameMode === 'whoami') return 'text-emerald-400 border-emerald-500/20 hover:border-emerald-400/85 hover:bg-emerald-500/[0.02]';
-    return 'text-indigo-400 border-indigo-500/30 hover:border-indigo-400/80 hover:bg-indigo-500/[0.03]';
+  const getGameLabel = () => {
+    switch (gameMode) {
+      case 'classic': return 'ITO Clássico';
+      case 'impostor': return 'O Impostor';
+      case 'whoami': return 'Quem Sou Eu?';
+      case 'whatdoyouknow': return 'O Que Você Sabe?';
+      default: return 'Partida';
+    }
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 relative h-full overflow-hidden text-slate-100">
-      <div className="absolute -top-24 -left-24 w-96 h-96 bg-slate-800/10 rounded-full blur-[120px] pointer-events-none" />
-      
+    <div className="flex-1 flex flex-col bg-[#F5F7FB] relative h-full overflow-hidden text-slate-800 font-sans">
       {/* Header Fixo */}
-      <div className="p-4 flex items-center bg-slate-900/60 border-b border-white/5 backdrop-blur-md sticky top-0 z-20 pt-8 md:pt-4 safe-top shrink-0">
-        <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-slate-200 transition-colors">
-          <ChevronLeft size={24} />
+      <div className="px-6 py-4 flex items-center bg-[#F5F7FB]/90 border-b border-slate-200/50 backdrop-blur-xl sticky top-0 z-20 pt-safe shrink-0">
+        <button 
+          onClick={onBack} 
+          aria-label="Voltar"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 text-slate-600 hover:text-party-blue hover:bg-slate-50 transition-colors"
+        >
+          <ChevronLeft size={22} />
         </button>
-        <span className="ml-4 font-black text-xl text-white font-outfit">Escolha a Conexão</span>
+        <div className="ml-3">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{getGameLabel()}</span>
+          <h1 className="font-black text-lg text-slate-800 leading-tight">Escolha a Conexão</h1>
+        </div>
       </div>
 
-      <div className="flex-1 p-6 flex flex-col justify-center gap-6 max-w-md mx-auto w-full">
-        <div className="text-center mb-4">
-          <h2 className="text-3xl font-black text-white font-outfit tracking-tight">Como querem jogar?</h2>
-          <p className="text-slate-400 mt-2 text-sm font-medium">Escolha jogar passando o aparelho ou com múltiplos dispositivos.</p>
+      <div className="flex-1 p-6 flex flex-col justify-center gap-5 max-w-md mx-auto w-full pb-safe">
+        <div className="text-center mb-2">
+          <div className="inline-flex p-3 bg-blue-50 text-party-blue rounded-2xl mb-3 shadow-sm border border-blue-100/50">
+            <Smartphone size={28} />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Como querem jogar?</h2>
+          <p className="text-slate-500 mt-1.5 text-sm font-medium">Escolha jogar compartilhando um único celular ou conectando múltiplos aparelhos.</p>
         </div>
 
         {/* Local: Passa e Joga */}
         <button
           onClick={onSelectLocal}
-          className="group relative w-full bg-slate-900/40 p-6 rounded-3xl border-2 border-slate-850 hover:border-slate-700 hover:bg-slate-900/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-95 text-left overflow-hidden shadow-lg"
+          className="group relative w-full bg-white p-5 rounded-3xl border border-slate-100 hover:border-party-blue/40 shadow-card hover:shadow-soft transition-all duration-200 transform active:scale-[0.98] text-left"
         >
           <div className="flex items-start gap-4">
-            <div className="p-4 bg-slate-850 border border-slate-750 rounded-2xl text-slate-350 shrink-0">
-              <Smartphone size={28} />
+            <div className="p-3.5 bg-slate-50 group-hover:bg-blue-50 rounded-2xl text-slate-600 group-hover:text-party-blue transition-colors shrink-0 border border-slate-100">
+              <Smartphone size={26} />
             </div>
-            <div>
-              <h3 className="text-xl font-black text-white font-outfit flex items-center gap-2">
-                1 Celular <span className="bg-slate-800 text-slate-350 text-[10px] px-2.5 py-0.5 rounded-full font-bold">Pass & Play</span>
-              </h3>
-              <p className="text-slate-400 text-xs sm:text-sm mt-1 leading-relaxed font-medium">Todos jogam na mesma tela, passando o celular a cada rodada. Ideal para qualquer momento.</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-lg font-bold text-slate-800">1 Celular</h3>
+                <TagChip label="Pass & Play" variant="neutral" />
+              </div>
+              <p className="text-slate-500 text-xs sm:text-sm font-medium leading-relaxed">
+                Todos jogam na mesma tela, passando o aparelho a cada turno. Perfeito para qualquer lugar!
+              </p>
             </div>
+            <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-party-blue transition-colors shrink-0 self-center" />
           </div>
         </button>
 
         {/* Multiplayer: Vários Celulares */}
         <button
           onClick={onSelectMultiplayer}
-          className={`group relative w-full bg-slate-900/40 p-6 rounded-3xl border-2 ${getThemeColor()} transition-all duration-300 transform hover:scale-[1.02] active:scale-95 text-left overflow-hidden shadow-lg`}
+          className="group relative w-full bg-white p-5 rounded-3xl border-2 border-party-blue/20 hover:border-party-blue shadow-card hover:shadow-soft transition-all duration-200 transform active:scale-[0.98] text-left overflow-hidden"
         >
-          <div className="flex items-start gap-4">
-            <div className="p-4 bg-slate-850 border border-slate-750 rounded-2xl text-slate-350 shrink-0">
-              <Wifi size={28} />
+          <div className="absolute top-0 right-0 w-36 h-36 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex items-start gap-4 relative z-10">
+            <div className="p-3.5 bg-blue-50 group-hover:bg-party-blue rounded-2xl text-party-blue group-hover:text-white transition-colors shrink-0 border border-blue-100">
+              <Wifi size={26} />
             </div>
-            <div>
-              <h3 className="text-xl font-black text-white font-outfit flex items-center gap-2">
-                Vários Celulares <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-550/30 text-[10px] px-2.5 py-0.5 rounded-full font-bold">Sem Fio</span>
-              </h3>
-              <p className="text-slate-400 text-xs sm:text-sm mt-1 leading-relaxed font-medium">Cada jogador usa seu próprio aparelho conectado na mesma rede local/Wi-Fi. Muito mais prático!</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-lg font-bold text-slate-800">Vários Celulares</h3>
+                <TagChip label="Sem Fio / Wi-Fi" variant="primary" />
+              </div>
+              <p className="text-slate-500 text-xs sm:text-sm font-medium leading-relaxed">
+                Cada um usa seu próprio celular sincronizado em tempo real. Não precisa instalar nada!
+              </p>
             </div>
+            <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-party-blue transition-colors shrink-0 self-center" />
           </div>
         </button>
       </div>

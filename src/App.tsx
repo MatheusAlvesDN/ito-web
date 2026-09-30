@@ -60,6 +60,12 @@ type State = {
   players: string[];
   themes: any[];
   saboteurMode?: boolean;
+  gameConfig?: {
+    connectionMode: 'local' | 'online';
+    scale: number;
+    timeLimit: number;
+    lives: number;
+  };
 };
 
 type Action =
@@ -72,7 +78,7 @@ type Action =
   | { type: 'SELECT_MODE_WHOAMI' }
   | { type: 'SELECT_MODE_WHATDOYOUKNOW' }
   | { type: 'PLAYERS_CONFIRMED'; players: string[] }
-  | { type: 'THEMES_CONFIRMED'; themes: any[]; saboteurMode?: boolean }
+  | { type: 'THEMES_CONFIRMED'; themes: any[]; saboteurMode?: boolean; gameConfig?: any }
   | { type: 'RESET' };
 
 const STORAGE_KEY = 'ito_app_state_v4';
@@ -83,6 +89,7 @@ type PersistedState = {
   players: string[];
   themeIds: string[];
   saboteurMode?: boolean;
+  gameConfig?: any;
 };
 
 const initialState: State = {
@@ -159,7 +166,13 @@ function reducer(state: State, action: Action): State {
       if (state.gameMode === 'whatdoyouknow') {
         return { ...state, themes: action.themes, screen: 'game-whatdoyouknow' };
       }
-      return { ...state, themes: action.themes, saboteurMode: action.saboteurMode, screen: 'game-classic' };
+      return { 
+        ...state, 
+        themes: action.themes, 
+        saboteurMode: action.saboteurMode, 
+        gameConfig: action.gameConfig,
+        screen: 'game-classic' 
+      };
 
     case 'RESET':
       try { localStorage.removeItem(STORAGE_KEY); } catch { }
@@ -253,7 +266,15 @@ export default function App() {
   const renderScreen = () => {
     switch (state.screen) {
       case 'home':
-        return <HomeScreen onPlay={() => dispatch({ type: 'SET_SCREEN', screen: 'connection-selection' })} />;
+        return (
+          <HomeScreen 
+            onSelectClassic={() => { dispatch({ type: 'SET_GAME_MODE', gameMode: 'classic' }); dispatch({ type: 'SET_SCREEN', screen: 'connection-selection' }); }}
+            onSelectImpostor={() => { dispatch({ type: 'SET_GAME_MODE', gameMode: 'impostor' }); dispatch({ type: 'SET_SCREEN', screen: 'connection-selection' }); }}
+            onSelectWhoAmI={() => { dispatch({ type: 'SET_GAME_MODE', gameMode: 'whoami' }); dispatch({ type: 'SET_SCREEN', screen: 'connection-selection' }); }}
+            onSelectWhatDoYouKnow={() => { dispatch({ type: 'SET_GAME_MODE', gameMode: 'whatdoyouknow' }); dispatch({ type: 'SET_SCREEN', screen: 'connection-selection' }); }}
+            onSelectTranslator={() => { dispatch({ type: 'SET_SCREEN', screen: 'translator-chain' }); }}
+          />
+        );
 
       case 'connection-selection':
         return (
@@ -261,7 +282,10 @@ export default function App() {
             onBack={() => dispatch({ type: 'GO_HOME' })}
             onSelectLocal={() => {
               setConnectionType('local');
-              dispatch({ type: 'SET_SCREEN', screen: 'mode-selection' });
+              const nextScreen = state.gameMode === 'classic' ? 'register-classic' : 
+                                 state.gameMode === 'impostor' ? 'register-impostor' : 
+                                 state.gameMode === 'whoami' ? 'register-whoami' : 'register-whatdoyouknow';
+              dispatch({ type: 'SET_SCREEN', screen: nextScreen as any });
             }}
             onSelectMultiplayer={() => {
               setConnectionType('multiplayer');
@@ -352,7 +376,7 @@ export default function App() {
                 dispatch({ type: 'SET_SCREEN', screen: 'register-classic' });
               }
             }}
-            onStart={(themes, saboteurMode) => {
+            onStart={(themes, saboteurMode, config) => {
               if (connectionType === 'multiplayer') {
                 let saboteurId = '';
                 if (saboteurMode && connectedPlayers.length > 0) {
@@ -365,11 +389,12 @@ export default function App() {
                   phase: 'init',
                   roundKey: Date.now(),
                   saboteurMode,
-                  saboteurId
+                  saboteurId,
+                  gameConfig: config
                 });
-                dispatch({ type: 'THEMES_CONFIRMED', themes, saboteurMode });
+                dispatch({ type: 'THEMES_CONFIRMED', themes, saboteurMode, gameConfig: config });
               } else {
-                dispatch({ type: 'THEMES_CONFIRMED', themes, saboteurMode });
+                dispatch({ type: 'THEMES_CONFIRMED', themes, saboteurMode, gameConfig: config });
               }
             }}
           />
@@ -589,19 +614,28 @@ export default function App() {
         );
 
       default:
-        return <HomeScreen onPlay={() => dispatch({ type: 'GO_MODE_SELECTION' })} />;
+        return (
+          <HomeScreen 
+            onSelectClassic={() => { dispatch({ type: 'SET_GAME_MODE', gameMode: 'classic' }); dispatch({ type: 'SET_SCREEN', screen: 'connection-selection' }); }}
+            onSelectImpostor={() => { dispatch({ type: 'SET_GAME_MODE', gameMode: 'impostor' }); dispatch({ type: 'SET_SCREEN', screen: 'connection-selection' }); }}
+            onSelectWhoAmI={() => { dispatch({ type: 'SET_GAME_MODE', gameMode: 'whoami' }); dispatch({ type: 'SET_SCREEN', screen: 'connection-selection' }); }}
+            onSelectWhatDoYouKnow={() => { dispatch({ type: 'SET_GAME_MODE', gameMode: 'whatdoyouknow' }); dispatch({ type: 'SET_SCREEN', screen: 'connection-selection' }); }}
+            onSelectTranslator={() => { dispatch({ type: 'SET_SCREEN', screen: 'translator-chain' }); }}
+          />
+        );
     }
   };
 
   return (
-    <div className="w-full h-full min-h-[100dvh] bg-slate-950 text-slate-100 font-sans overflow-hidden flex flex-col selection:bg-yellow-200 relative">
+    <div className="w-full h-full min-h-[100dvh] bg-party-bg text-party-dark font-sans overflow-hidden flex flex-col selection:bg-party-blue relative">
       <Toaster position="top-center" theme="dark" richColors />
-      {!state.screen.startsWith('game-') && (
+      {!state.screen.startsWith('game-') && state.screen !== 'home' && (
         <button
           onClick={toggleMute}
-          className="absolute top-4 right-4 z-50 p-2.5 bg-slate-900/60 border border-white/5 hover:bg-slate-800/80 text-slate-200 rounded-full transition-colors backdrop-blur-md"
+          aria-label={isMuted ? "Ativar som" : "Desativar som"}
+          className="absolute top-4 right-4 z-50 p-2.5 bg-white/90 border border-slate-200/80 hover:bg-white text-slate-600 hover:text-party-blue rounded-full shadow-sm transition-all backdrop-blur-md"
         >
-          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
       )}
       {/* Container principal livre de barras de rolagem globais */}

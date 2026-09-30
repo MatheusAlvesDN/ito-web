@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ChevronLeft, Copy, Users, Crown, ArrowRight, Share2, QrCode, X, Sparkles, Zap, Ghost, UserSearch, HelpCircle } from 'lucide-react';
+import { ChevronLeft, Copy, Users, Crown, ArrowRight, Share2, QrCode, X, Sparkles, Zap, Ghost, ScanFace, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { GameMode } from '../../App';
+import { TagChip } from '../common/TagChip';
 
 const AVAILABLE_MODES: {
   id: GameMode;
@@ -9,9 +10,8 @@ const AVAILABLE_MODES: {
   subtitle: string;
   minPlayers: number;
   tag: string;
-  color: string;
+  iconBg: string;
   activeBorder: string;
-  activeBg: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
 }[] = [
   {
@@ -20,9 +20,8 @@ const AVAILABLE_MODES: {
     subtitle: 'Ordene números em equipe',
     minPlayers: 2,
     tag: 'Coop',
-    color: 'text-yellow-400',
-    activeBorder: 'border-yellow-400/80',
-    activeBg: 'bg-yellow-400/10',
+    iconBg: 'bg-blue-50 text-party-blue',
+    activeBorder: 'border-party-blue ring-2 ring-party-blue/20 bg-blue-50/40',
     icon: Zap,
   },
   {
@@ -31,9 +30,8 @@ const AVAILABLE_MODES: {
     subtitle: 'Descubra quem não sabe o tema',
     minPlayers: 3,
     tag: 'Bluff',
-    color: 'text-purple-400',
-    activeBorder: 'border-purple-400/80',
-    activeBg: 'bg-purple-400/10',
+    iconBg: 'bg-purple-50 text-purple-600',
+    activeBorder: 'border-purple-500 ring-2 ring-purple-500/20 bg-purple-50/40',
     icon: Ghost,
   },
   {
@@ -42,10 +40,9 @@ const AVAILABLE_MODES: {
     subtitle: 'Adivinhe seu personagem',
     minPlayers: 2,
     tag: 'Casual',
-    color: 'text-emerald-400',
-    activeBorder: 'border-emerald-400/80',
-    activeBg: 'bg-emerald-400/10',
-    icon: UserSearch,
+    iconBg: 'bg-orange-50 text-orange-500',
+    activeBorder: 'border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/40',
+    icon: ScanFace,
   },
   {
     id: 'whatdoyouknow',
@@ -53,9 +50,8 @@ const AVAILABLE_MODES: {
     subtitle: 'Adivinhe a resposta do amigo',
     minPlayers: 3,
     tag: 'Party',
-    color: 'text-rose-400',
-    activeBorder: 'border-rose-400/80',
-    activeBg: 'bg-rose-400/10',
+    iconBg: 'bg-emerald-50 text-emerald-600',
+    activeBorder: 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40',
     icon: HelpCircle,
   },
 ];
@@ -101,96 +97,88 @@ export const MultiplayerLobbyScreen = ({
       }).catch(err => console.log('Share failed', err));
     } else {
       navigator.clipboard.writeText(link);
-      toast.success('Link de convite copiado para área de transferência!');
+      toast.success('Link copiado!');
     }
   };
 
-  const getThemeColorClass = () => {
-    if (gameMode === 'impostor') return 'text-purple-400 bg-purple-500/10 border-purple-500/20';
-    if (gameMode === 'classic') return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
-    if (gameMode === 'whatdoyouknow') return 'text-rose-400 bg-rose-500/10 border-rose-500/20';
-    if (gameMode === 'translator') return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-    return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-  };
-
-  const getStartButtonClass = () => {
-    if (gameMode === 'impostor') return 'bg-purple-600 hover:bg-purple-550';
-    if (gameMode === 'classic') return 'bg-yellow-400 hover:bg-yellow-350 text-black';
-    if (gameMode === 'whatdoyouknow') return 'bg-rose-500 hover:bg-rose-450';
-    if (gameMode === 'translator') return 'bg-blue-500 hover:bg-blue-450';
-    return 'bg-emerald-500 hover:bg-emerald-450';
-  };
-
   return (
-    <div className="flex-1 flex flex-col bg-slate-955 text-slate-100 relative h-full overflow-hidden font-sans">
-      {/* Background Blobs */}
-      <div className={`absolute top-0 right-0 w-80 h-80 rounded-full blur-[100px] pointer-events-none transition-colors duration-500 ${
-        gameMode === 'impostor' ? 'bg-purple-600/10' :
-        gameMode === 'classic' ? 'bg-yellow-550/10' :
-        gameMode === 'whatdoyouknow' ? 'bg-rose-550/10' :
-        'bg-emerald-500/10'
-      }`} />
-
+    <div className="flex-1 flex flex-col bg-[#F5F7FB] text-slate-800 relative h-full overflow-hidden font-sans">
       {/* Header Fixo */}
-      <div className="p-4 flex items-center justify-between bg-slate-900/60 border-b border-white/5 backdrop-blur-md sticky top-0 z-20 pt-8 md:pt-4 safe-top shrink-0">
-        <button onClick={onBack} className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-slate-355 transition-colors">
-          <ChevronLeft size={24} />
-        </button>
-        <span className="font-black text-xl text-white font-outfit">Lobby Multiplayer</span>
-        <div className={`text-xs font-black px-3 py-1.5 rounded-full font-outfit uppercase tracking-wider transition-all duration-300 ${getThemeColorClass()}`}>
-          {selectedModeConfig.title}
+      <div className="px-6 py-4 flex items-center justify-between bg-[#F5F7FB]/90 border-b border-slate-200/50 backdrop-blur-xl sticky top-0 z-20 pt-safe shrink-0">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={onBack} 
+            aria-label="Voltar"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 text-slate-600 hover:text-party-blue hover:bg-slate-50 transition-colors"
+          >
+            <ChevronLeft size={22} />
+          </button>
+          <div>
+            <h1 className="font-bold text-lg text-slate-800 leading-tight">Lobby Multiplayer</h1>
+            <p className="text-xs text-slate-500 font-medium">{connectedPlayers.length} na sala</p>
+          </div>
         </div>
+
+        <TagChip label={selectedModeConfig.title} variant="primary" />
       </div>
 
       {/* Conteúdo Central */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-4 md:gap-5 max-w-sm mx-auto w-full">
+      <div 
+        className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-4 max-w-sm mx-auto w-full"
+        style={{ paddingBottom: 'max(7.5rem, calc(6.5rem + env(safe-area-inset-bottom, 0px)))' }}
+      >
         {/* Código Card */}
-        <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5 text-center shadow-xl relative overflow-hidden backdrop-blur-sm">
-          <p className="text-[10px] font-black text-slate-450 uppercase tracking-[0.2em] mb-1 font-outfit">Código da Sala</p>
-          <div className="flex items-center justify-center gap-3">
-            <h1 className="text-4xl sm:text-5xl font-black text-yellow-455 font-outfit tracking-wider select-all">{roomCode}</h1>
+        <div className="bg-white p-5 rounded-3xl border border-slate-100 text-center shadow-card relative overflow-hidden">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+            Código da Sala
+          </p>
+          <div className="flex items-center justify-center gap-3 my-1">
+            <h2 className="text-4xl sm:text-5xl font-black text-slate-800 tracking-wider select-all font-mono">
+              {roomCode}
+            </h2>
             <button
               onClick={copyToClipboard}
-              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all active:scale-90"
+              className="p-2.5 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-party-blue border border-slate-100 rounded-xl transition-all active:scale-90"
               title="Copiar código"
             >
               {copied ? (
-                <span className="text-[10px] font-black text-emerald-400 font-outfit">COPIADO</span>
+                <span className="text-[10px] font-bold text-emerald-600">COPIADO</span>
               ) : (
                 <Copy size={18} />
               )}
             </button>
           </div>
-          <p className="text-[11px] text-slate-450 mt-1.5 font-medium">Compartilhe esse código ou o QR Code com seus amigos.</p>
-          <div className="grid grid-cols-2 gap-2 mt-3">
+          <p className="text-xs text-slate-400 font-medium mb-3">Compartilhe o código ou QR Code com seus amigos.</p>
+          
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={shareRoomLink}
-              className="py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-white/5 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all font-outfit uppercase tracking-wider"
+              className="py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all"
             >
-              <Share2 size={14} /> Link
+              <Share2 size={14} /> Link Convite
             </button>
             <button
               onClick={() => setShowQrModal(true)}
-              className="py-2.5 bg-slate-800 hover:bg-slate-750 text-yellow-400 border border-yellow-500/20 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all font-outfit uppercase tracking-wider"
+              className="py-2.5 bg-blue-50 hover:bg-blue-100 text-party-blue border border-blue-100 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all"
             >
               <QrCode size={14} /> QR Code
             </button>
           </div>
         </div>
 
-        {/* Seletor / Exibição do Modo de Jogo */}
-        <div className="bg-slate-900/60 p-4 rounded-3xl border border-white/5 shadow-xl relative overflow-hidden backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-350 font-outfit flex items-center gap-1.5">
-              <Sparkles size={14} className="text-yellow-400" /> Escolha o Modo
+        {/* Seletor do Modo de Jogo */}
+        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-card">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Sparkles size={14} className="text-party-blue" /> Modo de Jogo
             </span>
             {isHost ? (
-              <span className="text-[10px] font-bold text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full font-outfit">
+              <span className="text-[10px] font-bold text-party-blue bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">
                 Você escolhe
               </span>
             ) : (
-              <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full font-outfit">
-                Definido pelo Líder
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                Escolhido pelo Líder
               </span>
             )}
           </div>
@@ -205,23 +193,25 @@ export const MultiplayerLobbyScreen = ({
                   type="button"
                   disabled={!isHost}
                   onClick={() => onSelectGameMode && onSelectGameMode(m.id)}
-                  className={`p-3 rounded-2xl border text-left transition-all duration-200 relative overflow-hidden flex flex-col justify-between min-h-[76px] ${
+                  className={`p-3 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between min-h-[72px] ${
                     isSelected
-                      ? `${m.activeBorder} ${m.activeBg} shadow-md scale-[1.02]`
-                      : 'border-white/5 bg-slate-900/40 hover:border-white/10 opacity-60 hover:opacity-85'
+                      ? `${m.activeBorder} shadow-xs`
+                      : 'border-slate-100 bg-slate-50 hover:bg-slate-100/70 opacity-70 hover:opacity-100'
                   } ${isHost ? 'cursor-pointer active:scale-95' : 'cursor-default'}`}
                 >
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1.5">
-                      <IconComponent size={14} className={isSelected ? m.color : 'text-slate-400'} />
-                      <span className={`font-black text-xs font-outfit leading-tight ${isSelected ? m.color : 'text-slate-200'}`}>
+                      <div className={`p-1.5 rounded-lg ${m.iconBg}`}>
+                        <IconComponent size={14} />
+                      </div>
+                      <span className="font-bold text-xs text-slate-800 leading-tight">
                         {m.title}
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-2 text-[10px] text-slate-400 font-medium">
+                  <div className="flex items-center justify-between mt-2 text-[10px] text-slate-500 font-medium">
                     <span>Mín. {m.minPlayers}</span>
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md font-outfit ${isSelected ? 'bg-white/15 ' + m.color : 'bg-slate-800 text-slate-400'}`}>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white border border-slate-100 text-slate-600">
                       {m.tag}
                     </span>
                   </div>
@@ -232,80 +222,95 @@ export const MultiplayerLobbyScreen = ({
         </div>
 
         {/* Jogadores Conectados */}
-        <div className="flex flex-col bg-slate-900/20 rounded-3xl border border-white/5 overflow-hidden min-h-[140px]">
-          <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between bg-slate-900/40">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-350 font-outfit flex items-center gap-1.5">
-              <Users size={14} /> Jogadores ({connectedPlayers.length})
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-card overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Users size={14} /> Jogadores Conectados ({connectedPlayers.length})
             </span>
             {isHost && (
-              <span className="text-[9px] font-bold text-yellow-400 border border-yellow-500/25 bg-yellow-500/5 px-2 py-0.5 rounded-full font-outfit uppercase">Você é o Líder</span>
+              <span className="text-[10px] font-bold text-party-blue bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">
+                Você é o Líder
+              </span>
             )}
           </div>
 
-          <div className="p-3 space-y-2 max-h-[180px] overflow-y-auto">
+          <div className="p-3 space-y-2 max-h-[190px] overflow-y-auto">
             {connectedPlayers.map((player, index) => (
               <div
                 key={player.id}
-                className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-900/40 border border-white/5 animate-fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
+                className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 border border-slate-100 transition-all"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-slate-800 border border-white/5 flex items-center justify-center text-xs font-black text-white font-outfit">
-                    {index + 1}
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-white border border-slate-200 shrink-0">
+                    <img 
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}`} 
+                      alt={player.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <span className="font-bold text-sm text-slate-200">{player.name}</span>
+                  <span className="font-bold text-sm text-slate-800">{player.name}</span>
                 </div>
                 {index === 0 ? (
-                  <span className="text-[9px] font-black text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-lg flex items-center gap-1 font-outfit tracking-wide uppercase">
-                    <Crown size={10} className="fill-yellow-400/20" /> Líder
+                  <span className="text-[10px] font-bold text-party-orange bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Crown size={12} className="fill-orange-400" /> Líder
                   </span>
                 ) : (
-                  <span className="text-[9px] font-bold text-slate-450 bg-slate-850 px-2 py-0.5 rounded-lg font-outfit uppercase">Pronto</span>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    Conectado
+                  </span>
                 )}
               </div>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Rodapé Interno com Ações */}
-        <div className="mt-auto pt-1 pb-4 shrink-0">
+      {/* Barra Inferior com Safe Area */}
+      <div 
+        className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 px-6 pt-3 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] pb-safe-bottom"
+        style={{ paddingBottom: 'max(1.25rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))' }}
+      >
+        <div className="max-w-sm mx-auto w-full">
           {isHost ? (
-            <button
-              onClick={onStartGame}
-              disabled={!canStart}
-              className={`w-full py-4 text-white font-black text-base rounded-2xl shadow-lg transition-all active:scale-[0.98] disabled:scale-100 disabled:bg-slate-900 disabled:text-slate-600 disabled:shadow-none flex items-center justify-center gap-2 font-outfit ${getStartButtonClass()}`}
-            >
-              <span>AVANÇAR PARA TEMAS</span> <ArrowRight size={18} />
-            </button>
+            <div>
+              <button
+                onClick={onStartGame}
+                disabled={!canStart}
+                className="w-full py-4 bg-party-blue hover:bg-party-blueHover disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold text-base rounded-full shadow-[0_8px_20px_rgba(37,99,235,0.25)] disabled:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <span>Avançar para Temas</span>
+                <ArrowRight size={18} />
+              </button>
+              {!canStart && (
+                <p className="text-center text-party-orange text-xs font-bold mt-2">
+                  Mínimo de {minRequired} jogadores para iniciar {selectedModeConfig.title}
+                </p>
+              )}
+            </div>
           ) : (
-            <div className="p-3.5 bg-slate-900/50 rounded-2xl border border-white/5 flex items-center justify-center gap-3 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
-              <p className="text-slate-455 text-xs font-bold uppercase tracking-wider font-outfit text-center">
-                Aguardando o Líder iniciar...
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center gap-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-party-blue animate-ping" />
+              <p className="text-slate-600 text-xs font-bold text-center">
+                Aguardando o Líder iniciar a partida...
               </p>
             </div>
-          )}
-          {isHost && !canStart && (
-            <p className="text-center text-red-400 text-[11px] font-black mt-2 font-outfit uppercase tracking-wider animate-pulse">
-              Mínimo de {minRequired} jogadores para {selectedModeConfig.title}
-            </p>
           )}
         </div>
       </div>
 
       {/* Modal QR Code */}
       {showQrModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl p-6 max-w-sm w-full text-center relative shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-white border border-slate-100 rounded-3xl p-6 max-w-sm w-full text-center relative shadow-2xl">
             <button
               onClick={() => setShowQrModal(false)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full bg-slate-800 transition-colors"
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 rounded-full bg-slate-50 transition-colors"
             >
               <X size={18} />
             </button>
-            <p className="text-xs font-black uppercase text-yellow-400 tracking-widest font-outfit mb-1">Entrar na Sala</p>
-            <h3 className="text-xl font-bold text-white mb-4">Aponte a câmera para entrar</h3>
-            <div className="bg-white p-4 rounded-2xl inline-block shadow-lg mx-auto mb-4">
+            <p className="text-xs font-bold uppercase text-party-blue tracking-wider mb-1">Entrar na Sala</p>
+            <h3 className="text-xl font-bold text-slate-800 mb-4">Aponte a câmera do celular</h3>
+            <div className="bg-white p-3 rounded-2xl inline-block border border-slate-100 shadow-sm mx-auto mb-4">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
                   `${window.location.origin}${window.location.pathname}?room=${roomCode}&mode=${gameMode}`
@@ -314,13 +319,13 @@ export const MultiplayerLobbyScreen = ({
                 className="w-48 h-48 mx-auto"
               />
             </div>
-            <p className="text-xs text-slate-400 mb-4">Ou digite o código <span className="text-yellow-400 font-black">{roomCode}</span> no aplicativo.</p>
+            <p className="text-xs text-slate-500 mb-4 font-medium">Ou digite o código <span className="text-slate-900 font-black">{roomCode}</span> no aplicativo.</p>
             <button
               onClick={() => {
                 shareRoomLink();
                 setShowQrModal(false);
               }}
-              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl uppercase font-outfit"
+              className="w-full py-3 bg-party-blue hover:bg-party-blueHover text-white font-bold text-xs rounded-full shadow-sm"
             >
               Copiar Link Direto
             </button>

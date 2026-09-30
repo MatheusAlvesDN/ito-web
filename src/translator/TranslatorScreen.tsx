@@ -537,31 +537,30 @@ export default function TradutorCadeia({ onBack }: TranslatorScreenProps) {
     : rawFinalTranslation;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col antialiased selection:bg-indigo-500/30 selection:text-indigo-200 w-full overflow-y-auto">
-
-      {/* Background radial effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.08),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(168,85,247,0.08),transparent_50%)] pointer-events-none" />
-
+    <div 
+      className="min-h-screen bg-[#F5F7FB] text-slate-800 flex flex-col antialiased selection:bg-indigo-500/20 selection:text-indigo-600 w-full overflow-y-auto"
+      style={{ paddingBottom: 'max(4rem, calc(2rem + env(safe-area-inset-bottom, 0px)))' }}
+    >
       {/* Header */}
-      <header className="border-b border-slate-900 bg-slate-950/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-slate-200/60 bg-[#F5F7FB]/90 backdrop-blur-xl sticky top-0 z-50 px-6 py-4 flex items-center justify-between pt-safe">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-2 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition-colors"
             title="Voltar ao início"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold flex items-center gap-2 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              <RefreshCw className="w-5 h-5 text-indigo-400 animate-spin" style={{ animationDuration: '3.5s' }} />
+            <h1 className="text-lg font-bold flex items-center gap-2 text-slate-800">
+              <RefreshCw className="w-5 h-5 text-indigo-600 animate-spin" style={{ animationDuration: '3.5s' }} />
               Lab de Tradução em Cadeia
             </h1>
             <p className="text-xs text-slate-500 font-medium">O experimento do "Telefone Sem Fio" linguístico</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-800">
+        <div className="flex items-center gap-2 text-xs text-slate-600 bg-white px-3 py-1.5 rounded-full border border-slate-100 shadow-sm">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           Google Translate Ativo
         </div>

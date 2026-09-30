@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, Plus, Trash2, Users, X } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2, Users, X, ArrowRight } from 'lucide-react';
+import { TagChip } from './TagChip';
 
 export type AccentColor = 'yellow' | 'purple' | 'emerald' | 'rose';
 
@@ -12,74 +13,16 @@ interface Props {
   storageKey?: string;
 }
 
-const COLOR_STYLES: Record<
-  AccentColor,
-  {
-    backBtn: string;
-    focusRing: string;
-    addBtn: string;
-    chipSelected: string;
-    chipHover: string;
-    chipDelete: string;
-    avatarGradient: string;
-    itemHover: string;
-  }
-> = {
-  yellow: {
-    backBtn: 'text-yellow-400',
-    focusRing: 'focus:ring-yellow-400 focus:border-yellow-400',
-    addBtn: 'bg-yellow-400 hover:bg-yellow-300 text-slate-950',
-    chipSelected: 'bg-yellow-400 border-yellow-400 text-slate-950 shadow-yellow-400/20',
-    chipHover: 'hover:border-yellow-400/50',
-    chipDelete: 'hover:bg-yellow-500 text-slate-900',
-    avatarGradient: 'from-yellow-400 to-amber-500 text-slate-950',
-    itemHover: 'hover:border-yellow-400/30',
-  },
-  purple: {
-    backBtn: 'text-purple-400',
-    focusRing: 'focus:ring-purple-400 focus:border-purple-400',
-    addBtn: 'bg-purple-650 hover:bg-purple-600 text-white',
-    chipSelected: 'bg-purple-650 border-purple-500 text-white shadow-purple-500/20',
-    chipHover: 'hover:border-purple-400/50',
-    chipDelete: 'hover:bg-purple-700 text-white',
-    avatarGradient: 'from-purple-500 to-indigo-600 text-white',
-    itemHover: 'hover:border-purple-400/30',
-  },
-  emerald: {
-    backBtn: 'text-emerald-400',
-    focusRing: 'focus:ring-emerald-400 focus:border-emerald-400',
-    addBtn: 'bg-emerald-500 hover:bg-emerald-400 text-slate-950',
-    chipSelected: 'bg-emerald-500 border-emerald-400 text-slate-950 shadow-emerald-400/20',
-    chipHover: 'hover:border-emerald-400/50',
-    chipDelete: 'hover:bg-emerald-600 text-slate-900',
-    avatarGradient: 'from-emerald-400 to-teal-600 text-slate-950',
-    itemHover: 'hover:border-emerald-400/30',
-  },
-  rose: {
-    backBtn: 'text-rose-400',
-    focusRing: 'focus:ring-rose-400 focus:border-rose-400',
-    addBtn: 'bg-rose-500 hover:bg-rose-400 text-white',
-    chipSelected: 'bg-rose-500 border-rose-400 text-white shadow-rose-400/20',
-    chipHover: 'hover:border-rose-400/50',
-    chipDelete: 'hover:bg-rose-600 text-white',
-    avatarGradient: 'from-rose-400 to-pink-600 text-white',
-    itemHover: 'hover:border-rose-400/30',
-  },
-};
-
 export function PlayerRegistrationScreen({
   title,
   onBack,
   onNext,
-  accentColor = 'yellow',
   minPlayers = 2,
   storageKey = 'ito_saved_players',
 }: Props) {
   const [inputValue, setInputValue] = useState('');
   const [localPlayers, setLocalPlayers] = useState<string[]>([]);
   const [savedHistory, setSavedHistory] = useState<string[]>([]);
-
-  const styles = COLOR_STYLES[accentColor];
 
   // Carrega jogadores do localStorage ao montar o componente
   useEffect(() => {
@@ -124,41 +67,54 @@ export function PlayerRegistrationScreen({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-955 relative h-full overflow-hidden text-slate-100 font-sans">
+    <div className="flex-1 flex flex-col bg-[#F5F7FB] relative h-full overflow-hidden text-slate-800 font-sans">
       {/* Header Fixo */}
-      <div className="p-4 flex items-center bg-slate-900/60 border-b border-white/5 backdrop-blur-md sticky top-0 z-20 pt-8 md:pt-4 safe-top shrink-0">
-        <button
-          onClick={onBack}
-          aria-label="Voltar"
-          className={`p-2 bg-white/5 rounded-full hover:bg-white/10 ${styles.backBtn} transition-colors`}
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <span className="ml-4 font-black text-xl text-white font-outfit">{title}</span>
+      <div className="px-6 py-4 flex items-center justify-between bg-[#F5F7FB]/90 border-b border-slate-200/50 backdrop-blur-xl sticky top-0 z-20 pt-safe shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            aria-label="Voltar"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 text-slate-600 hover:text-party-blue hover:bg-slate-50 transition-colors"
+          >
+            <ChevronLeft size={22} />
+          </button>
+          <div>
+            <h1 className="font-bold text-lg text-slate-800 leading-tight">{title}</h1>
+            <p className="text-xs text-slate-500 font-medium">Quem vai entrar na roda?</p>
+          </div>
+        </div>
+
+        <TagChip 
+          label={`${localPlayers.length} / mín ${minPlayers}`} 
+          variant={localPlayers.length >= minPlayers ? 'success' : 'warning'} 
+        />
       </div>
 
-      {/* Área Central Flexível */}
-      <div className="flex-1 p-6 flex flex-col max-w-full overflow-hidden">
-        {/* Input Area */}
-        <div className="bg-slate-900/60 backdrop-blur-md p-5 rounded-3xl shadow-xl mb-6 border border-white/5 shrink-0 animate-fade-in-scale">
-          <label className="block text-slate-450 font-bold mb-2 ml-1 text-xs uppercase tracking-wider font-outfit">
-            Novo Participante
+      {/* Área Central Rolável */}
+      <div 
+        className="flex-1 p-6 flex flex-col max-w-md mx-auto w-full overflow-y-auto"
+        style={{ paddingBottom: 'max(7.5rem, calc(6.5rem + env(safe-area-inset-bottom, 0px)))' }}
+      >
+        {/* Input Card */}
+        <div className="bg-white p-5 rounded-3xl shadow-card border border-slate-100 mb-6 shrink-0 animate-fade-in">
+          <label className="block text-slate-500 font-bold mb-2 ml-1 text-xs uppercase tracking-wider">
+            Adicionar Jogador
           </label>
           <div className="flex gap-2">
             <input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
-              placeholder="Digite o nome..."
-              className={`flex-1 bg-slate-955 border border-white/10 rounded-2xl px-4 py-3.5 text-white placeholder:text-slate-600 focus:ring-2 ${styles.focusRing} outline-none transition-all duration-200`}
+              placeholder="Digite o nome do amigo..."
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-800 placeholder:text-slate-400 font-medium focus:bg-white focus:border-party-blue focus:ring-2 focus:ring-party-blue/20 outline-none transition-all duration-200 text-sm"
             />
             <button
               onClick={addPlayer}
               disabled={!inputValue.trim()}
               aria-label="Adicionar jogador"
-              className={`${styles.addBtn} disabled:bg-slate-800 disabled:text-slate-600 font-black rounded-2xl p-3.5 shadow-md active:scale-95 disabled:scale-100 transition-all duration-150`}
+              className="bg-party-blue hover:bg-party-blueHover disabled:bg-slate-100 disabled:text-slate-300 text-white font-bold rounded-2xl px-4 py-3.5 shadow-sm active:scale-95 disabled:scale-100 transition-all duration-150 flex items-center justify-center shrink-0"
             >
-              <Plus size={24} />
+              <Plus size={22} />
             </button>
           </div>
         </div>
@@ -166,20 +122,20 @@ export function PlayerRegistrationScreen({
         {/* Jogadores Salvos / Histórico */}
         {savedHistory.length > 0 && (
           <div className="mb-6 shrink-0 animate-fade-in">
-            <span className="block text-slate-450 font-bold mb-2 ml-1 text-[11px] uppercase tracking-wider font-outfit">
-              Rápida Seleção / Histórico
+            <span className="block text-slate-400 font-bold mb-2.5 ml-1 text-[11px] uppercase tracking-wider">
+              Adicionar do Histórico
             </span>
-            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1 pb-1">
+            <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1 pb-1">
               {savedHistory.map((player) => {
                 const isSelected = localPlayers.includes(player);
                 return (
                   <div
                     key={`history-${player}`}
                     onClick={() => togglePlayerFromHistory(player)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border text-xs font-bold transition-all duration-200 cursor-pointer select-none active:scale-95 ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all duration-200 cursor-pointer select-none active:scale-95 ${
                       isSelected
-                        ? `${styles.chipSelected} shadow-md`
-                        : `bg-slate-900/60 border-white/10 text-slate-350 ${styles.chipHover} hover:text-white`
+                        ? 'bg-party-blue text-white border-party-blue shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-700 hover:border-party-blue/50 hover:text-party-blue shadow-xs'
                     }`}
                   >
                     <span>{player}</span>
@@ -190,7 +146,7 @@ export function PlayerRegistrationScreen({
                       }}
                       aria-label="Remover do histórico"
                       className={`p-0.5 rounded-full transition-colors ${
-                        isSelected ? styles.chipDelete : 'hover:bg-white/10 text-slate-500'
+                        isSelected ? 'hover:bg-blue-600 text-white/80' : 'hover:bg-slate-100 text-slate-400'
                       }`}
                       title="Remover do histórico"
                     >
@@ -203,38 +159,59 @@ export function PlayerRegistrationScreen({
           </div>
         )}
 
-        {/* List Area */}
-        <div className="flex-1 overflow-y-auto space-y-3 pb-4 pr-1">
+        {/* Lista de Jogadores */}
+        <div className="flex-1 space-y-2.5">
+          <div className="flex items-center justify-between ml-1 mb-1">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Jogadores na Partida ({localPlayers.length})
+            </span>
+            {localPlayers.length > 0 && (
+              <button 
+                onClick={() => setLocalPlayers([])}
+                className="text-xs text-red-500 font-medium hover:underline"
+              >
+                Limpar todos
+              </button>
+            )}
+          </div>
+
           {localPlayers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-slate-600 animate-fade-in">
-              <div className="w-16 h-16 bg-slate-900/60 border border-white/5 rounded-full flex items-center justify-center mb-3">
-                <Users size={32} className="text-slate-500" />
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-white/60 border border-dashed border-slate-200 rounded-3xl animate-fade-in">
+              <div className="w-14 h-14 bg-blue-50 text-party-blue rounded-2xl flex items-center justify-center mb-3">
+                <Users size={28} />
               </div>
-              <p className="font-bold text-slate-400 text-sm font-outfit">
-                Adicione pelo menos {minPlayers} jogadores
+              <p className="font-bold text-slate-700 text-base">
+                Nenhum jogador ainda
               </p>
-              <p className="text-xs text-slate-500 mt-1">Quanto mais amigos na roda, mais divertido!</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-[220px]">
+                Adicione pelo menos {minPlayers} amigos para iniciar a partida!
+              </p>
             </div>
           ) : (
             localPlayers.map((player, index) => (
               <div
                 key={`${player}-${index}`}
-                className={`flex items-center justify-between bg-slate-900/60 backdrop-blur-md p-4 rounded-2xl shadow-sm border border-white/5 ${styles.itemHover} transition-all duration-200 animate-fade-in`}
+                className="flex items-center justify-between bg-white p-3.5 rounded-2xl shadow-card border border-slate-100 transition-all duration-200 animate-fade-in"
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`w-10 h-10 bg-gradient-to-br ${styles.avatarGradient} rounded-full flex items-center justify-center font-black text-sm shadow-sm select-none font-outfit`}
-                  >
-                    {player.charAt(0).toUpperCase()}
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 border border-slate-100 shrink-0">
+                    <img 
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${player}`} 
+                      alt={player}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <span className="font-bold text-white text-base">{player}</span>
+                  <div>
+                    <span className="font-bold text-slate-800 text-sm">{player}</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">#{index + 1}</span>
+                  </div>
                 </div>
                 <button
                   onClick={() => removePlayer(index)}
                   aria-label="Remover jogador"
-                  className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-150"
+                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-150"
                 >
-                  <Trash2 size={20} />
+                  <Trash2 size={18} />
                 </button>
               </div>
             ))
@@ -242,15 +219,21 @@ export function PlayerRegistrationScreen({
         </div>
       </div>
 
-      {/* Rodapé Fixo Flex */}
-      <div className="p-6 bg-slate-955 border-t border-white/5 shrink-0 safe-bottom shadow-[0_-8px_24px_rgba(0,0,0,0.2)]">
-        <button
-          onClick={handleNext}
-          disabled={localPlayers.length < minPlayers}
-          className="w-full bg-white hover:bg-slate-200 disabled:bg-slate-900 disabled:text-slate-655 text-slate-955 font-black text-lg py-4 rounded-2xl shadow-lg transition-all duration-150 active:scale-95 disabled:active:scale-100 flex items-center justify-center gap-2 font-outfit"
-        >
-          <span>AVANÇAR</span> <ChevronLeft className="rotate-180" size={24} />
-        </button>
+      {/* Rodapé Fixo com Safe Area */}
+      <div 
+        className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 px-6 pt-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] pb-safe-bottom"
+        style={{ paddingBottom: 'max(1.25rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))' }}
+      >
+        <div className="max-w-md mx-auto w-full">
+          <button
+            onClick={handleNext}
+            disabled={localPlayers.length < minPlayers}
+            className="w-full bg-party-blue hover:bg-party-blueHover disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold text-base py-4 rounded-full shadow-[0_8px_20px_rgba(37,99,235,0.25)] disabled:shadow-none transition-all duration-150 active:scale-95 flex items-center justify-center gap-2"
+          >
+            <span>Continuar para Temas</span>
+            <ArrowRight size={20} />
+          </button>
+        </div>
       </div>
     </div>
   );
