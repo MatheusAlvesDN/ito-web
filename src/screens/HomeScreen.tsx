@@ -21,7 +21,7 @@ export function HomeScreen({
   const [activeTab, setActiveTab] = useState<'play' | 'rooms' | 'challenges' | 'profile'>('play');
 
   return (
-    <div 
+    <div
       className="flex-1 flex flex-col bg-[#F5F7FB] text-party-dark w-full h-full overflow-y-auto relative"
       style={{ paddingBottom: 'max(8rem, calc(7rem + env(safe-area-inset-bottom, 0px)))' }}
     >
@@ -31,9 +31,9 @@ export function HomeScreen({
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-white rounded-full flex items-center px-4 py-3.5 shadow-sm border border-slate-100">
             <Search className="w-5 h-5 text-slate-400 shrink-0" />
-            <input 
-              type="text" 
-              placeholder="Procurar um jogo ou tema..." 
+            <input
+              type="text"
+              placeholder="Procurar um jogo ou tema..."
               className="bg-transparent border-none outline-none flex-1 ml-3 text-sm font-medium text-slate-700 placeholder:text-slate-400"
             />
           </div>
@@ -47,12 +47,12 @@ export function HomeScreen({
       <div className="px-6 mb-8">
         <div className="bg-gradient-to-br from-[#3B82F6] to-[#2563EB] rounded-[2rem] p-6 text-white relative overflow-hidden shadow-soft">
           <div className="absolute -right-4 -top-8 opacity-10 pointer-events-none">
-             <span className="text-[140px] font-black leading-none">∞</span>
+            <span className="text-[140px] font-black leading-none">∞</span>
           </div>
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
 
           <div className="inline-block bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-5 shadow-sm">
-             Destaque da Semana
+            Destaque da Semana
           </div>
 
           <h2 className="text-2xl font-black mb-2 leading-tight max-w-[85%]">
@@ -75,7 +75,7 @@ export function HomeScreen({
           </div>
 
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={onSelectClassic}
               className="flex-1 bg-party-orange hover:bg-orange-600 text-white font-black text-sm uppercase tracking-wide py-3.5 rounded-full flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_4px_14px_0_rgba(249,115,22,0.39)]"
             >
@@ -98,7 +98,7 @@ export function HomeScreen({
         </div>
 
         <div className="flex flex-col gap-3">
-          
+
           <div onClick={onSelectClassic} className="bg-white rounded-3xl p-4 flex items-center gap-4 shadow-card cursor-pointer hover:shadow-soft transition-shadow border border-slate-100">
             <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex flex-col items-center justify-center shrink-0">
               <span className="text-xs font-black leading-none">1 2 3</span>
@@ -106,7 +106,7 @@ export function HomeScreen({
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-slate-800 text-base truncate">Ito Clássico - Sala dos Cria</h4>
-              <p className="text-slate-500 text-xs truncate font-medium mb-2">Criado por @matheusito</p>
+              <p className="text-slate-500 text-xs truncate font-medium mb-2">Criado por @savio.bez</p>
               <div className="flex items-center gap-2">
                 <TagChip label="4/8" icon={<Users className="w-3 h-3" />} variant="neutral" />
                 <TagChip label="Começando em 01:24" icon={<Clock className="w-3 h-3" />} variant="warning" />
@@ -122,7 +122,7 @@ export function HomeScreen({
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-slate-800 text-base truncate">Quem Sou Eu? - Famosos</h4>
-              <p className="text-slate-500 text-xs truncate font-medium mb-2">Criado por @pedrogamer</p>
+              <p className="text-slate-500 text-xs truncate font-medium mb-2">Criado por @pipootaku</p>
               <div className="flex items-center gap-2">
                 <TagChip label="6/8" icon={<Users className="w-3 h-3" />} variant="neutral" />
                 <TagChip label="Em breve" variant="warning" />
@@ -137,7 +137,7 @@ export function HomeScreen({
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-slate-800 text-base truncate">O Impostor - Edição Geek</h4>
-              <p className="text-slate-500 text-xs truncate font-medium mb-2">Criado por @anagames</p>
+              <p className="text-slate-500 text-xs truncate font-medium mb-2">Criado por @josa_amigo</p>
               <div className="flex items-center gap-2">
                 <TagChip label="5/7" icon={<Users className="w-3 h-3" />} variant="neutral" />
                 <TagChip label="Na fila" variant="success" />
@@ -145,14 +145,14 @@ export function HomeScreen({
             </div>
             <ChevronRight className="w-5 h-5 text-slate-300" />
           </div>
-          
+
           <div onClick={onSelectWhatDoYouKnow} className="bg-white rounded-3xl p-4 flex items-center gap-4 shadow-card cursor-pointer hover:shadow-soft transition-shadow border border-slate-100">
             <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center shrink-0">
               <FileQuestion size={24} />
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-slate-800 text-base truncate">O que Você Sabe?</h4>
-              <p className="text-slate-500 text-xs truncate font-medium mb-2">Criado por @otakulover</p>
+              <p className="text-slate-500 text-xs truncate font-medium mb-2">Criado por @lana_del_rey_1999</p>
               <div className="flex items-center gap-2">
                 <TagChip label="3/6" icon={<Users className="w-3 h-3" />} variant="neutral" />
                 <TagChip label="Na fila" variant="success" />
@@ -160,7 +160,7 @@ export function HomeScreen({
             </div>
             <ChevronRight className="w-5 h-5 text-slate-300" />
           </div>
-          
+
         </div>
       </div>
 
