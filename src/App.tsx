@@ -650,15 +650,15 @@ export default function App() {
 
 const LoadingFallback = ({ mode }: { mode: GameMode }) => {
   const getColors = () => {
-    if (mode === 'impostor') return 'text-purple-400 bg-purple-500/10';
-    if (mode === 'classic') return 'text-yellow-400 bg-yellow-500/10';
-    if (mode === 'whatdoyouknow') return 'text-rose-400 bg-rose-500/10';
-    if (mode === 'translator') return 'text-blue-400 bg-blue-500/10';
-    return 'text-emerald-400 bg-emerald-500/10';
+    if (mode === 'impostor') return 'text-purple-600 bg-purple-50';
+    if (mode === 'classic') return 'text-yellow-500 bg-yellow-50';
+    if (mode === 'whatdoyouknow') return 'text-rose-500 bg-rose-50';
+    if (mode === 'translator') return 'text-blue-500 bg-blue-50';
+    return 'text-emerald-500 bg-emerald-50';
   };
   return (
-    <div className="flex-1 flex items-center justify-center bg-slate-950 h-full w-full">
-      <div className={`p-6 rounded-full animate-spin ${getColors()}`}>
+    <div className="flex-1 flex items-center justify-center bg-[#F5F7FB] h-full w-full">
+      <div className={`p-6 rounded-full shadow-card animate-spin border border-slate-100 ${getColors()}`}>
         <RefreshCw size={48} />
       </div>
     </div>

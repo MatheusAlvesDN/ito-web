@@ -248,10 +248,10 @@ export default function GameScreenWhatDoYouKnow({
 
   if (activePlayers.length < 3) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950 text-center text-slate-100 font-sans h-full">
-        <h2 className="text-2xl font-black text-white mb-2 font-outfit">Jogadores Insuficientes</h2>
-        <p className="text-slate-400 mb-6 text-sm font-medium">O modo O Que Você Sabe precisa de no mínimo 3 pessoas.</p>
-        <button onClick={onBack} className="bg-slate-900 border border-white/5 text-white px-6 py-3 rounded-2xl font-bold font-outfit active:scale-95 transition-all">Voltar</button>
+      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#F5F7FB] text-center text-slate-800 font-sans h-full">
+        <h2 className="text-2xl font-black text-slate-800 mb-2 font-outfit">Jogadores Insuficientes</h2>
+        <p className="text-slate-500 mb-6 text-sm font-medium">O modo O Que Você Sabe precisa de no mínimo 3 pessoas.</p>
+        <button onClick={onBack} className="bg-white border border-slate-200 shadow-sm text-slate-700 px-6 py-3 rounded-2xl font-bold font-outfit active:scale-95 transition-all">Voltar</button>
       </div>
     );
   }

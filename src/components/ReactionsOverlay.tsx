@@ -66,7 +66,7 @@ export const ReactionsOverlay = () => {
 
 export const ReactionsTray = () => {
   return (
-    <div className="flex items-center justify-center gap-1.5 bg-slate-900/90 px-4 py-2 rounded-3xl border border-white/5 backdrop-blur-md shadow-2xl pointer-events-auto">
+    <div className="flex items-center justify-center gap-1.5 bg-white/95 px-4 py-2 rounded-3xl border border-slate-200/80 backdrop-blur-md shadow-card pointer-events-auto">
       {REACTION_EMOJIS.map((emoji) => (
         <button
           key={emoji}
