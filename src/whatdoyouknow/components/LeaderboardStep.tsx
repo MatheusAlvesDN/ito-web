@@ -8,6 +8,7 @@ type Props = {
   isMultiplayer: boolean;
   isHost: boolean;
   handleNextRound: () => void;
+  getAvatar?: (name: string) => string;
 };
 
 export default function LeaderboardStep({
@@ -16,7 +17,8 @@ export default function LeaderboardStep({
   scores,
   isMultiplayer,
   isHost,
-  handleNextRound
+  handleNextRound,
+  getAvatar
 }: Props) {
   const sortedPlayers = [...activePlayers].sort((a, b) => (scores[b] || 0) - (scores[a] || 0));
   const highestScore = scores[sortedPlayers[0]] || 0;
@@ -52,10 +54,17 @@ export default function LeaderboardStep({
                   : 'bg-white border-slate-200/80'
                   }`}
               >
-                <div className="flex items-center gap-4">
-                  <span className={`font-black text-xl font-outfit ${isFirstPlace ? 'text-amber-500' : 'text-slate-400'}`}>
+                <div className="flex items-center gap-3.5">
+                  <span className={`font-black text-xl font-outfit w-6 text-center ${isFirstPlace ? 'text-amber-500' : 'text-slate-400'}`}>
                     {index + 1}
                   </span>
+                  {getAvatar && (
+                    <img
+                      src={getAvatar(player)}
+                      alt={player}
+                      className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 p-0.5 object-contain shrink-0"
+                    />
+                  )}
                   <span className={`font-bold text-lg font-outfit ${isFirstPlace ? 'text-slate-900' : 'text-slate-700'}`}>
                     {player}
                   </span>

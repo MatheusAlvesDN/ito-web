@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { ChevronLeft, Copy, Users, Crown, ArrowRight, Share2, QrCode, X, Sparkles, Zap, Ghost, ScanFace, HelpCircle } from 'lucide-react';
+import { ChevronLeft, Copy, Users, Crown, ArrowRight, Share2, QrCode, X, Sparkles, Zap, Ghost, ScanFace, HelpCircle, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import type { GameMode } from '../../App';
 import { TagChip } from '../common/TagChip';
+import { AvatarPickerModal } from '../common/AvatarPickerModal';
+import { getAvatarUrl } from '../../utils/avatarService';
+import type { ConnectedPlayer } from '../../utils/syncService';
 
 const AVAILABLE_MODES: {
   id: GameMode;
@@ -61,6 +64,8 @@ export const MultiplayerLobbyScreen = ({
   roomCode,
   isHost,
   connectedPlayers,
+  playerId,
+  onUpdateAvatar,
   onStartGame,
   gameMode,
   onSelectGameMode,
@@ -68,13 +73,19 @@ export const MultiplayerLobbyScreen = ({
   onBack: () => void;
   roomCode: string;
   isHost: boolean;
-  connectedPlayers: { id: string; name: string }[];
+  connectedPlayers: ConnectedPlayer[];
+  playerId?: string;
+  onUpdateAvatar?: (avatar: string) => void;
   onStartGame: () => void;
   gameMode: GameMode;
   onSelectGameMode?: (mode: GameMode) => void;
 }) => {
   const [copied, setCopied] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+
+  const myPlayer = connectedPlayers.find((p) => p.id === playerId) || (isHost ? connectedPlayers[0] : null);
+  const myAvatar = myPlayer?.avatar || (myPlayer ? `avataaars:${myPlayer.name}` : '');
 
   const selectedModeConfig = AVAILABLE_MODES.find(m => m.id === gameMode) || AVAILABLE_MODES[0];
   const minRequired = selectedModeConfig.minPlayers;
@@ -235,32 +246,67 @@ export const MultiplayerLobbyScreen = ({
           </div>
 
           <div className="p-3 space-y-2 max-h-[190px] overflow-y-auto">
-            {connectedPlayers.map((player, index) => (
-              <div
-                key={player.id}
-                className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 border border-slate-100 transition-all"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-white border border-slate-200 shrink-0">
-                    <img 
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}`} 
-                      alt={player.name}
-                      className="w-full h-full object-cover"
-                    />
+            {connectedPlayers.map((player, index) => {
+              const isMe = playerId ? player.id === playerId : (isHost ? index === 0 : false);
+              const avatarKey = player.avatar || player.name;
+              return (
+                <div
+                  key={player.id}
+                  className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:border-slate-200"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {isMe ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsAvatarModalOpen(true)}
+                        className="group relative w-9 h-9 rounded-full overflow-hidden bg-white border-2 border-party-blue/70 hover:border-party-blue shrink-0 shadow-xs cursor-pointer active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-party-blue/30"
+                        title="Toque para trocar seu avatar"
+                        aria-label="Trocar seu avatar"
+                      >
+                        <img 
+                          src={getAvatarUrl(avatarKey)} 
+                          alt={player.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <Pencil size={11} className="text-white drop-shadow-sm" />
+                        </div>
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-party-blue text-white rounded-full flex items-center justify-center border border-white">
+                          <Pencil size={6} strokeWidth={3} />
+                        </span>
+                      </button>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-white border border-slate-200 shrink-0">
+                        <img 
+                          src={getAvatarUrl(avatarKey)} 
+                          alt={player.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <span className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                        {player.name}
+                        {isMe && (
+                          <span className="text-[10px] text-party-blue font-bold bg-blue-50 px-1.5 py-0.2 rounded-full border border-blue-100">
+                            Você
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
-                  <span className="font-bold text-sm text-slate-800">{player.name}</span>
+                  {index === 0 ? (
+                    <span className="text-[10px] font-bold text-party-orange bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Crown size={12} className="fill-orange-400" /> Líder
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      Conectado
+                    </span>
+                  )}
                 </div>
-                {index === 0 ? (
-                  <span className="text-[10px] font-bold text-party-orange bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Crown size={12} className="fill-orange-400" /> Líder
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                    Conectado
-                  </span>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -332,6 +378,19 @@ export const MultiplayerLobbyScreen = ({
           </div>
         </div>
       )}
+
+      {/* Modal de Escolha de Avatar */}
+      <AvatarPickerModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        currentAvatar={myAvatar}
+        playerName={myPlayer?.name || 'Você'}
+        onSave={(newAvatar) => {
+          if (onUpdateAvatar) {
+            onUpdateAvatar(newAvatar);
+          }
+        }}
+      />
     </div>
   );
 };

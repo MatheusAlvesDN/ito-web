@@ -1,17 +1,23 @@
 import { useState } from 'react';
-import { ChevronLeft, Plus, RefreshCw, LogIn, Wifi } from 'lucide-react';
+import { ChevronLeft, Plus, RefreshCw, LogIn, Wifi, Pencil } from 'lucide-react';
 import type { GameMode } from '../../App';
+import { AvatarPickerModal } from '../common/AvatarPickerModal';
+import { getAvatarUrl, getPlayerAvatar } from '../../utils/avatarService';
 
 export const LobbySetupScreen = ({
   onBack,
   playerName,
   setPlayerName,
+  playerAvatar,
+  setPlayerAvatar,
   isConnecting,
   handleConnect,
 }: {
   onBack: () => void;
   playerName: string;
   setPlayerName: (val: string) => void;
+  playerAvatar?: string;
+  setPlayerAvatar?: (val: string) => void;
   isConnecting: boolean;
   handleConnect: (customIp: string, actionType: 'create' | 'join', joinCode?: string) => void;
   gameMode?: GameMode;
@@ -24,6 +30,15 @@ export const LobbySetupScreen = ({
       return '';
     }
   });
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+
+  const effectiveAvatar = playerAvatar || getPlayerAvatar(playerName || 'Jogador');
+
+  const handleSaveAvatar = (newAvatar: string) => {
+    if (setPlayerAvatar) {
+      setPlayerAvatar(newAvatar);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col bg-[#F5F7FB] relative h-full overflow-hidden text-slate-800 font-sans">
@@ -54,19 +69,49 @@ export const LobbySetupScreen = ({
           <p className="text-slate-500 text-xs mt-1 font-medium">Jogue direto pelo celular de cada amigo conectado na mesma sala.</p>
         </div>
 
-        {/* Card: Seu Apelido */}
+        {/* Card: Seu Apelido e Avatar */}
         <div className="bg-white p-5 rounded-3xl shadow-card border border-slate-100 space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 ml-1">
-              Seu Nome ou Apelido
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 ml-1">
+              Seu Perfil
             </label>
-            <input
-              type="text"
-              placeholder="Ex: Matheus"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value.slice(0, 14))}
-              className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl text-slate-800 font-bold placeholder:text-slate-400 outline-none focus:bg-white focus:border-party-blue focus:ring-2 focus:ring-party-blue/20 transition-all text-sm"
-            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsAvatarModalOpen(true)}
+                className="group relative w-14 h-14 rounded-full overflow-hidden bg-slate-100 border-2 border-slate-200 hover:border-party-blue transition-all active:scale-90 shrink-0 shadow-sm cursor-pointer"
+                title="Toque para trocar seu avatar"
+              >
+                <img
+                  src={getAvatarUrl(effectiveAvatar)}
+                  alt="Seu Avatar"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                />
+                <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <Pencil size={16} className="text-white drop-shadow-sm" />
+                </div>
+                <span className="absolute bottom-0 right-0 w-4 h-4 bg-party-blue text-white rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                  <Pencil size={8} strokeWidth={3} />
+                </span>
+              </button>
+
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Seu Apelido..."
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value.slice(0, 14))}
+                  className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl text-slate-800 font-bold placeholder:text-slate-400 outline-none focus:bg-white focus:border-party-blue focus:ring-2 focus:ring-party-blue/20 transition-all text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarModalOpen(true)}
+                  className="text-[11px] text-party-blue font-bold hover:underline mt-1 ml-1"
+                >
+                  Trocar avatar
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Criar Nova Sala */}
@@ -112,6 +157,15 @@ export const LobbySetupScreen = ({
           </button>
         </div>
       </div>
+
+      {/* Modal de Escolha de Avatar */}
+      <AvatarPickerModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        currentAvatar={effectiveAvatar}
+        playerName={playerName || 'Jogador'}
+        onSave={handleSaveAvatar}
+      />
     </div>
   );
 };

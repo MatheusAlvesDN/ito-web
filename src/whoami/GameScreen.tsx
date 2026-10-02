@@ -22,6 +22,7 @@ import { type WhoAmITheme, WHOAMI_THEMES } from './data';
 import { syncService, triggerVibration } from '../utils/syncService';
 import { audioService } from '../utils/audioService';
 import { ReactionsOverlay, ReactionsTray } from '../components/ReactionsOverlay';
+import { getAvatarUrl, getPlayerAvatar } from '../utils/avatarService';
 
 type Props = {
   onBack: () => void;
@@ -31,7 +32,7 @@ type Props = {
   isHost?: boolean;
   syncGameState?: any;
   playerId?: string;
-  connectedPlayers?: { id: string; name: string }[];
+  connectedPlayers?: { id: string; name: string; avatar?: string }[];
   isMuted: boolean;
   toggleMute: () => void;
 };
@@ -85,6 +86,11 @@ export default function GameScreenWhoAmI({
   const [revealedCards, setRevealedCards] = useState<Record<number, boolean>>({});
   const [localMatchNumber, setLocalMatchNumber] = useState(1);
   const [localMatchHistory, setLocalMatchHistory] = useState<MatchRecord[]>([]);
+
+  const getAvatarForPlayer = (name: string) => {
+    const found = connectedPlayers?.find((p) => p.name === name);
+    return found?.avatar || getPlayerAvatar(name);
+  };
 
   // --- LOCAL PEAK/REVEAL OPTION FOR MULTIPLAYER ---
   const [revealedMyOwn, setRevealedMyOwn] = useState(false);
@@ -535,12 +541,19 @@ export default function GameScreenWhoAmI({
           {/* Destaque do Campeão */}
           {champion && (
             <div className="w-full max-w-md bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-300 rounded-3xl p-5 mb-4 text-center shadow-card animate-fade-in-scale">
-              <span className="text-[11px] font-black uppercase tracking-widest text-amber-600 font-outfit block mb-1">
+              <span className="text-[11px] font-black uppercase tracking-widest text-amber-600 font-outfit block mb-2">
                 👑 Grande Campeão
               </span>
-              <p className="text-2xl font-black font-outfit text-slate-900 drop-shadow-sm">
-                {champion.name}
-              </p>
+              <div className="flex flex-col items-center justify-center my-2">
+                <img
+                  src={getAvatarUrl(getAvatarForPlayer(champion.name))}
+                  alt={champion.name}
+                  className="w-16 h-16 rounded-2xl bg-amber-100 border-2 border-amber-400 p-1 shadow-md object-contain mb-2"
+                />
+                <p className="text-2xl font-black font-outfit text-slate-900 drop-shadow-sm">
+                  {champion.name}
+                </p>
+              </div>
               <div className="flex items-center justify-center gap-3 mt-2 text-xs font-bold text-amber-700 font-outfit">
                 <span>{champion.totalRounds} rodadas totais</span>
                 <span>•</span>
@@ -583,6 +596,12 @@ export default function GameScreenWhoAmI({
                       }`}>
                         {isFirst ? '🥇' : isSecond ? '🥈' : isThird ? '🥉' : `${rank}º`}
                       </div>
+
+                      <img
+                        src={getAvatarUrl(getAvatarForPlayer(p.name))}
+                        alt={p.name}
+                        className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 p-0.5 object-contain shrink-0"
+                      />
 
                       <div>
                         <p className="font-bold text-lg font-outfit text-slate-800 leading-snug">{p.name}</p>
@@ -741,6 +760,12 @@ export default function GameScreenWhoAmI({
                       </div>
                     )}
 
+                    <img
+                      src={getAvatarUrl(getAvatarForPlayer(p.name))}
+                      alt={p.name}
+                      className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 p-0.5 object-contain shrink-0"
+                    />
+
                     <div>
                       <p className="font-bold text-lg font-outfit text-slate-900 leading-snug">{p.name}</p>
                       <p className="text-xs text-slate-500 mt-0.5 font-medium">Era: <span className="font-bold text-slate-800">{p.personality}</span></p>
@@ -840,8 +865,12 @@ export default function GameScreenWhoAmI({
         <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center gap-6 text-center animate-fade-in">
           {revealStep === 'hidden' ? (
             <>
-              <div className="bg-white border border-slate-200/80 p-5 rounded-full mb-2 shadow-card">
-                <UserSearch size={56} className="text-emerald-600" />
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-white border-4 border-emerald-100 shadow-card mb-2 shrink-0">
+                <img 
+                  src={getAvatarUrl(getAvatarForPlayer(currentPlayer.name))}
+                  alt={currentPlayer.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h2 className="text-2xl font-black text-slate-900 font-outfit">Vez de {currentPlayer.name}</h2>
               <div className="bg-red-50 border-2 border-red-200 rounded-3xl p-6 shadow-card max-w-xs w-full animate-fade-in-scale">
@@ -866,7 +895,14 @@ export default function GameScreenWhoAmI({
                 <div className="absolute opacity-10 top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none">
                    <UserSearch size={220} />
                 </div>
-                <p className="text-emerald-100 font-bold uppercase tracking-widest mb-3 relative z-10 text-[10px] font-outfit">
+                <div className="w-14 h-14 rounded-full overflow-hidden bg-white/20 border border-white/40 mx-auto mb-3 relative z-10 shadow-sm">
+                  <img 
+                    src={getAvatarUrl(getAvatarForPlayer(currentPlayer.name))}
+                    alt={currentPlayer.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <p className="text-emerald-100 font-bold uppercase tracking-widest mb-2 relative z-10 text-[10px] font-outfit">
                   {currentPlayer.name} é:
                 </p>
                 <p className="text-3xl sm:text-4xl font-black relative z-10 drop-shadow-md leading-tight font-outfit select-none">
@@ -992,7 +1028,16 @@ export default function GameScreenWhoAmI({
           return (
             <div key={index} className="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-card hover:border-emerald-300 transition-all duration-200 relative overflow-hidden">
               <div className="flex-1">
-                <span className="font-black text-xl text-slate-900 font-outfit block truncate max-w-[200px]">{p.name}</span>
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                    <img 
+                      src={getAvatarUrl(getAvatarForPlayer(p.name))}
+                      alt={p.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="font-black text-xl text-slate-900 font-outfit truncate max-w-[200px]">{p.name}</span>
+                </div>
                 <p className="text-xs text-slate-500 mt-1 font-medium">
                   {isMe ? (
                     revealedMyOwn ? (

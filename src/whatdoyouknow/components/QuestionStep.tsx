@@ -12,6 +12,7 @@ type Props = {
   isHost: boolean;
   isMyTurn: boolean;
   handleGoToScoring: () => void;
+  getAvatar?: (name: string) => string;
 };
 
 export default function QuestionStep({
@@ -23,7 +24,8 @@ export default function QuestionStep({
   isMultiplayer,
   isHost,
   isMyTurn,
-  handleGoToScoring
+  handleGoToScoring,
+  getAvatar
 }: Props) {
   // Timer lógico de 60s
   const [timeLeft, setTimeLeft] = useState(60);
@@ -70,11 +72,18 @@ export default function QuestionStep({
       </div>
 
       <div className="flex-1 flex flex-col p-6 items-center justify-center overflow-y-auto z-10">
-        <div className="mb-6 text-center animate-fade-in">
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 font-outfit">Jogador da Vez</p>
+        <div className="mb-6 text-center animate-fade-in flex flex-col items-center">
+          {getAvatar && (
+            <img
+              src={getAvatar(targetPlayer)}
+              alt={targetPlayer}
+              className="w-16 h-16 rounded-2xl bg-white border-2 border-rose-400 p-1 shadow-md object-contain mb-2"
+            />
+          )}
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1 font-outfit">Jogador da Vez</p>
           <div className="inline-block relative">
             <div className="absolute inset-0 bg-rose-500/10 blur-xl rounded-full" />
-            <h1 className="text-4xl font-black text-slate-800 font-outfit relative z-10">{targetPlayer}</h1>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-800 font-outfit relative z-10">{targetPlayer}</h1>
           </div>
         </div>
 

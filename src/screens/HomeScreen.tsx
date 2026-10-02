@@ -3,6 +3,8 @@ import { Search, SlidersHorizontal, ChevronRight, Clock, Users, Ghost, ScanFace,
 import { AppHeader } from '../components/common/AppHeader';
 import { BottomNav } from '../components/common/BottomNav';
 import { TagChip } from '../components/common/TagChip';
+import { AvatarPickerModal } from '../components/common/AvatarPickerModal';
+import { getPlayerAvatar, savePlayerAvatar } from '../utils/avatarService';
 
 interface Props {
   onSelectClassic: () => void;
@@ -19,13 +21,30 @@ export function HomeScreen({
   onSelectWhatDoYouKnow,
 }: Props) {
   const [activeTab, setActiveTab] = useState<'play' | 'rooms' | 'challenges' | 'profile'>('play');
+  const [userAvatar, setUserAvatar] = useState(() => {
+    return localStorage.getItem('ito_user_avatar') || localStorage.getItem('ito_player_avatar') || getPlayerAvatar('Lucas');
+  });
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+
+  const handleSaveAvatar = (newAvatar: string) => {
+    setUserAvatar(newAvatar);
+    localStorage.setItem('ito_user_avatar', newAvatar);
+    localStorage.setItem('ito_player_avatar', newAvatar);
+    savePlayerAvatar('Lucas', newAvatar);
+  };
 
   return (
     <div
       className="flex-1 flex flex-col bg-[#F5F7FB] text-party-dark w-full h-full overflow-y-auto relative"
       style={{ paddingBottom: 'max(8rem, calc(7rem + env(safe-area-inset-bottom, 0px)))' }}
     >
-      <AppHeader userName="Lucas" coins={1250} hasNotifications={true} />
+      <AppHeader 
+        userName="Lucas" 
+        userAvatar={userAvatar}
+        onAvatarClick={() => setIsAvatarModalOpen(true)}
+        coins={1250} 
+        hasNotifications={true} 
+      />
 
       <div className="px-6 mt-2 mb-6">
         <div className="flex items-center gap-2">
@@ -178,6 +197,14 @@ export function HomeScreen({
       </div>
 
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
+
+      <AvatarPickerModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        currentAvatar={userAvatar}
+        playerName="Lucas"
+        onSave={handleSaveAvatar}
+      />
     </div>
   );
 }

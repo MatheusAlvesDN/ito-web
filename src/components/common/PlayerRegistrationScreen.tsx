@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, Plus, Trash2, Users, X, ArrowRight } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2, Users, X, ArrowRight, Pencil } from 'lucide-react';
+import { toast } from 'sonner';
 import { TagChip } from './TagChip';
+import { AvatarPickerModal } from './AvatarPickerModal';
+import {
+  getAvatarUrl,
+  getPlayerAvatar,
+  savePlayerAvatar,
+  getSavedAvatars,
+} from '../../utils/avatarService';
 
 export type AccentColor = 'yellow' | 'purple' | 'emerald' | 'rose';
 
@@ -23,6 +31,8 @@ export function PlayerRegistrationScreen({
   const [inputValue, setInputValue] = useState('');
   const [localPlayers, setLocalPlayers] = useState<string[]>([]);
   const [savedHistory, setSavedHistory] = useState<string[]>([]);
+  const [playerAvatars, setPlayerAvatars] = useState<Record<string, string>>(() => getSavedAvatars());
+  const [avatarModalTarget, setAvatarModalTarget] = useState<{ name: string; avatar: string } | null>(null);
 
   // Carrega jogadores do localStorage ao montar o componente
   useEffect(() => {
@@ -32,6 +42,7 @@ export function PlayerRegistrationScreen({
         setSavedHistory(JSON.parse(saved));
       } catch {}
     }
+    setPlayerAvatars(getSavedAvatars());
   }, [storageKey]);
 
   const addPlayer = () => {
@@ -58,6 +69,20 @@ export function PlayerRegistrationScreen({
     const updatedHistory = savedHistory.filter((p) => p !== player);
     setSavedHistory(updatedHistory);
     localStorage.setItem(storageKey, JSON.stringify(updatedHistory));
+  };
+
+  const handleOpenAvatarModal = (playerName: string) => {
+    const current = playerAvatars[playerName] || getPlayerAvatar(playerName);
+    setAvatarModalTarget({ name: playerName, avatar: current });
+  };
+
+  const handleSaveAvatar = (newAvatar: string) => {
+    if (avatarModalTarget) {
+      const playerName = avatarModalTarget.name;
+      savePlayerAvatar(playerName, newAvatar);
+      setPlayerAvatars((prev) => ({ ...prev, [playerName]: newAvatar }));
+      toast.success(`Avatar de ${playerName} atualizado!`);
+    }
   };
 
   const handleNext = () => {
@@ -128,16 +153,20 @@ export function PlayerRegistrationScreen({
             <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1 pb-1">
               {savedHistory.map((player) => {
                 const isSelected = localPlayers.includes(player);
+                const avatar = playerAvatars[player] || getPlayerAvatar(player);
                 return (
                   <div
                     key={`history-${player}`}
                     onClick={() => togglePlayerFromHistory(player)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all duration-200 cursor-pointer select-none active:scale-95 ${
+                    className={`flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full border text-xs font-bold transition-all duration-200 cursor-pointer select-none active:scale-95 ${
                       isSelected
                         ? 'bg-party-blue text-white border-party-blue shadow-sm'
                         : 'bg-white border-slate-200 text-slate-700 hover:border-party-blue/50 hover:text-party-blue shadow-xs'
                     }`}
                   >
+                    <div className="w-5 h-5 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-200/50">
+                      <img src={getAvatarUrl(avatar)} alt="" className="w-full h-full object-cover" />
+                    </div>
                     <span>{player}</span>
                     <button
                       onClick={(e) => {
@@ -188,36 +217,69 @@ export function PlayerRegistrationScreen({
               </p>
             </div>
           ) : (
-            localPlayers.map((player, index) => (
-              <div
-                key={`${player}-${index}`}
-                className="flex items-center justify-between bg-white p-3.5 rounded-2xl shadow-card border border-slate-100 transition-all duration-200 animate-fade-in"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 border border-slate-100 shrink-0">
-                    <img 
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${player}`} 
-                      alt={player}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <span className="font-bold text-slate-800 text-sm">{player}</span>
-                    <span className="block text-[11px] text-slate-400 font-medium">#{index + 1}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => removePlayer(index)}
-                  aria-label="Remover jogador"
-                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-150"
+            localPlayers.map((player, index) => {
+              const currentAvatar = playerAvatars[player] || getPlayerAvatar(player);
+              return (
+                <div
+                  key={`${player}-${index}`}
+                  className="flex items-center justify-between bg-white p-3.5 rounded-2xl shadow-card border border-slate-100 hover:border-slate-200 transition-all duration-200 animate-fade-in"
                 >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            ))
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAvatarModal(player)}
+                      className="group relative w-11 h-11 rounded-full overflow-hidden bg-slate-100 border-2 border-slate-200 hover:border-party-blue transition-all active:scale-90 shrink-0 shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-party-blue/30"
+                      title="Toque para trocar o avatar"
+                      aria-label={`Trocar avatar de ${player}`}
+                    >
+                      <img 
+                        src={getAvatarUrl(currentAvatar)} 
+                        alt={player}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <Pencil size={13} className="text-white drop-shadow-sm" />
+                      </div>
+                      <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-party-blue text-white rounded-full flex items-center justify-center border border-white shadow-xs">
+                        <Pencil size={8} strokeWidth={3} />
+                      </span>
+                    </button>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-slate-800 text-sm">{player}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAvatarModal(player)}
+                          className="text-[10px] text-party-blue font-semibold hover:underline"
+                        >
+                          trocar
+                        </button>
+                      </div>
+                      <span className="block text-[11px] text-slate-400 font-medium">#{index + 1}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => removePlayer(index)}
+                    aria-label="Remover jogador"
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-150"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
+
+      {/* Modal de Escolha de Avatar */}
+      <AvatarPickerModal
+        isOpen={Boolean(avatarModalTarget)}
+        onClose={() => setAvatarModalTarget(null)}
+        currentAvatar={avatarModalTarget?.avatar || ''}
+        playerName={avatarModalTarget?.name}
+        onSave={handleSaveAvatar}
+      />
 
       {/* Rodapé Fixo com Safe Area */}
       <div 

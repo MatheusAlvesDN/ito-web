@@ -31,8 +31,10 @@ if not "%ERRORLEVEL%"=="0" (
     exit /b 1
 )
 
-REM Configurar JAVA_HOME caso nao esteja definido
-if not defined JAVA_HOME (
+REM Configurar JAVA_HOME para o JDK 21
+if exist "C:\Program Files\Java\jdk-21" (
+    set "JAVA_HOME=C:\Program Files\Java\jdk-21"
+) else if not defined JAVA_HOME (
     if exist "C:\Users\%USERNAME%\AppData\Local\Programs\Eclipse Adoptium\jdk-21.0.9.10-hotspot" (
         set "JAVA_HOME=C:\Users\%USERNAME%\AppData\Local\Programs\Eclipse Adoptium\jdk-21.0.9.10-hotspot"
     ) else if exist "C:\Program Files\Android\Android Studio\jbr" (

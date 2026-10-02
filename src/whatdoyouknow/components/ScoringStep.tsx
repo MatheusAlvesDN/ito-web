@@ -9,6 +9,7 @@ type Props = {
   selectedWinners: Set<string>;
   toggleWinner: (playerName: string) => void;
   handleConfirmScores: () => void;
+  getAvatar?: (name: string) => string;
 };
 
 export default function ScoringStep({
@@ -19,7 +20,8 @@ export default function ScoringStep({
   guessingPlayers,
   selectedWinners,
   toggleWinner,
-  handleConfirmScores
+  handleConfirmScores,
+  getAvatar
 }: Props) {
   return (
     <div className="flex-1 flex flex-col bg-[#F5F7FB] text-slate-800 relative h-full overflow-hidden font-sans">
@@ -51,9 +53,18 @@ export default function ScoringStep({
                     : 'bg-white border-slate-200/80 hover:border-rose-300 text-slate-800'
                     }`}
                 >
-                  <span className={`font-bold text-lg font-outfit relative z-10 ${isWinner ? 'text-rose-700' : 'text-slate-800'}`}>
-                    {player}
-                  </span>
+                  <div className="flex items-center gap-3 relative z-10">
+                    {getAvatar && (
+                      <img
+                        src={getAvatar(player)}
+                        alt={player}
+                        className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 p-0.5 object-contain shrink-0"
+                      />
+                    )}
+                    <span className={`font-bold text-lg font-outfit ${isWinner ? 'text-rose-700' : 'text-slate-800'}`}>
+                      {player}
+                    </span>
+                  </div>
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-all border-2 relative z-10 ${isWinner ? 'bg-rose-500 border-rose-500 text-white scale-110 shadow-sm' : 'border-slate-300 text-transparent'
                     }`}>
                     <CheckCircle size={18} strokeWidth={2.5} />

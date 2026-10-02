@@ -14,6 +14,7 @@ import {
 import { type Theme, IMPOSTOR_SCENARIOS, type ImpostorScenario } from './data';
 import { syncService, triggerVibration } from '../utils/syncService';
 import { audioService } from '../utils/audioService';
+import { getAvatarUrl, getPlayerAvatar } from '../utils/avatarService';
 import { ReactionsOverlay, ReactionsTray } from '../components/ReactionsOverlay';
 
 type GameStep = 'distribution' | 'discussion' | 'reveal';
@@ -26,7 +27,7 @@ type Props = {
   isHost?: boolean;
   syncGameState?: any;
   playerId?: string;
-  connectedPlayers?: { id: string; name: string }[];
+  connectedPlayers?: { id: string; name: string; avatar?: string }[];
   isMuted: boolean;
   toggleMute: () => void;
 };
@@ -62,6 +63,12 @@ export default function GameScreenImpostor({
   const impostorPlayerId = isMultiplayer ? (syncGameState?.impostorPlayerId || '') : '';
   const viewedPlayers = isMultiplayer ? (syncGameState?.viewedPlayers || []) : [];
   const redemptionStatus = isMultiplayer ? (syncGameState?.redemptionStatus || 'pending') : localRedemptionStatus;
+
+  const getAvatarForPlayer = (name: string) => {
+    const cp = connectedPlayers.find(p => p.name === name);
+    if (cp && cp.avatar) return cp.avatar;
+    return getPlayerAvatar(name);
+  };
 
   // --- TIMER STATE & EFFECTS ---
   const [timeLeft, setTimeLeft] = useState(120);
@@ -295,15 +302,20 @@ export default function GameScreenImpostor({
 
         {/* Área Central Rolável */}
         <div className="flex-1 flex flex-col p-6 items-center justify-center overflow-y-auto">
-          <div className="mb-6 text-center animate-fade-in">
+          <div className="mb-6 text-center animate-fade-in flex flex-col items-center">
+            <img
+              src={getAvatarUrl(getAvatarForPlayer(currentPlayerName))}
+              alt={currentPlayerName}
+              className="w-16 h-16 rounded-2xl bg-white border-2 border-purple-400 p-1 shadow-md object-contain mb-2"
+            />
             {isMultiplayer ? (
               <>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 font-outfit">Seu Apelido</p>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1 font-outfit">Seu Apelido</p>
                 <h1 className="text-3xl font-black text-slate-800 font-outfit">{currentPlayerName}</h1>
               </>
             ) : (
               <>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 font-outfit">Passe o celular para</p>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1 font-outfit">Passe o celular para</p>
                 <h1 className="text-3xl sm:text-4xl font-black text-slate-800 font-outfit">{currentPlayerName}</h1>
               </>
             )}
@@ -562,8 +574,12 @@ export default function GameScreenImpostor({
           
           <div className="relative mb-6 select-none">
             <div className="absolute inset-0 bg-purple-500/20 blur-3xl rounded-full" />
-            <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-xl relative z-10 border-4 border-white">
-               <span className="text-4xl font-black text-white font-outfit">{impostorName.charAt(0).toUpperCase()}</span>
+            <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-3xl flex items-center justify-center shadow-xl relative z-10 border-4 border-white p-1 overflow-hidden">
+               <img
+                 src={getAvatarUrl(getAvatarForPlayer(impostorName))}
+                 alt={impostorName}
+                 className="w-full h-full object-contain"
+               />
             </div>
             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white border border-purple-200 px-4 py-1 rounded-full whitespace-nowrap z-20 shadow-md">
                <span className="font-black text-xs text-purple-700 font-outfit tracking-wide uppercase">{impostorName}</span>

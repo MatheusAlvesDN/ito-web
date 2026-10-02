@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { syncService } from '../utils/syncService';
+import { syncService, type ConnectedPlayer } from '../utils/syncService';
+import { getPlayerAvatar, savePlayerAvatar } from '../utils/avatarService';
 import { toast } from 'sonner';
 
 export function useMultiplayerSync(
@@ -15,9 +16,10 @@ export function useMultiplayerSync(
   });
   const [roomCode, setRoomCode] = useState('');
   const [isHost, setIsHost] = useState(false);
-  const [connectedPlayers, setConnectedPlayers] = useState<{ id: string; name: string }[]>([]);
+  const [connectedPlayers, setConnectedPlayers] = useState<ConnectedPlayer[]>([]);
   const [syncGameState, setSyncGameState] = useState<any>(null);
   const [playerName, setPlayerName] = useState('');
+  const [playerAvatar, setPlayerAvatar] = useState('');
   const [playerId, setPlayerId] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   
@@ -26,6 +28,8 @@ export function useMultiplayerSync(
     const savedName = localStorage.getItem('ito_player_name');
     if (savedName) {
       setPlayerName(savedName);
+      const savedAvatar = localStorage.getItem('ito_player_avatar') || getPlayerAvatar(savedName);
+      setPlayerAvatar(savedAvatar);
     }
   }, []);
 
@@ -36,8 +40,24 @@ export function useMultiplayerSync(
     };
   }, []);
 
-  const handleConnect = async (customIp: string, actionType: 'create' | 'join', joinCode?: string, onSuccess?: () => void) => {
+  const handleUpdateAvatar = (newAvatar: string) => {
+    setPlayerAvatar(newAvatar);
+    if (playerName) {
+      savePlayerAvatar(playerName, newAvatar);
+    }
+    localStorage.setItem('ito_player_avatar', newAvatar);
+    syncService.updatePlayerAvatar(newAvatar);
+  };
+
+  const handleConnect = async (
+    customIp: string, 
+    actionType: 'create' | 'join', 
+    joinCode?: string, 
+    onSuccess?: () => void,
+    avatarOverride?: string
+  ) => {
     setIsConnecting(true);
+    const effectiveAvatar = avatarOverride || playerAvatar || getPlayerAvatar(playerName);
     try {
       syncService.setServerUrl(customIp);
       await syncService.connect({
@@ -69,7 +89,7 @@ export function useMultiplayerSync(
         onPlayerJoined: (playersList) => {
           setConnectedPlayers([...playersList]);
           const newPlayer = playersList[playersList.length - 1];
-          if (newPlayer) {
+          if (newPlayer && newPlayer.id !== syncService.currentPlayerId) {
             toast.info(`${newPlayer.name} entrou na sala`);
           }
         },
@@ -104,11 +124,14 @@ export function useMultiplayerSync(
       // Salva no localStorage para conveniência
       localStorage.setItem('ito_multiplayer_ip', customIp);
       localStorage.setItem('ito_player_name', playerName);
+      if (effectiveAvatar) {
+        localStorage.setItem('ito_player_avatar', effectiveAvatar);
+      }
 
       if (actionType === 'create') {
-        syncService.createRoom(playerName);
+        syncService.createRoom(playerName, effectiveAvatar);
       } else if (actionType === 'join' && joinCode) {
-        syncService.joinRoom(joinCode, playerName);
+        syncService.joinRoom(joinCode, playerName, effectiveAvatar);
       }
     } catch (err) {
       console.error(err);
@@ -136,6 +159,9 @@ export function useMultiplayerSync(
     syncGameState,
     playerName,
     setPlayerName,
+    playerAvatar,
+    setPlayerAvatar,
+    handleUpdateAvatar,
     playerId,
     isConnecting,
     handleConnect,

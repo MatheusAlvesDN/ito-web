@@ -1,22 +1,55 @@
-import { Bell } from 'lucide-react';
+import { Bell, Pencil } from 'lucide-react';
+import { getAvatarUrl } from '../../utils/avatarService';
 
 interface AppHeaderProps {
   userName: string;
+  userAvatar?: string;
+  onAvatarClick?: () => void;
   coins?: number;
   hasNotifications?: boolean;
 }
 
-export function AppHeader({ userName, coins = 1250, hasNotifications = true }: AppHeaderProps) {
+export function AppHeader({ 
+  userName, 
+  userAvatar, 
+  onAvatarClick, 
+  coins = 1250, 
+  hasNotifications = true 
+}: AppHeaderProps) {
+  const avatarKey = userAvatar || userName;
+
   return (
     <div className="flex items-center justify-between px-6 py-4 bg-transparent pt-safe">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full overflow-hidden bg-white shadow-sm border border-slate-100 flex-shrink-0">
-          <img 
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userName}`} 
-            alt="Avatar" 
-            className="w-full h-full object-cover"
-          />
-        </div>
+        {onAvatarClick ? (
+          <button
+            type="button"
+            onClick={onAvatarClick}
+            className="group relative w-12 h-12 rounded-full overflow-hidden bg-white shadow-sm border border-slate-100 flex-shrink-0 cursor-pointer active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-party-blue/30"
+            title="Toque para trocar seu avatar"
+            aria-label="Trocar avatar do perfil"
+          >
+            <img 
+              src={getAvatarUrl(avatarKey)} 
+              alt="Avatar" 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+            />
+            <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <Pencil size={13} className="text-white drop-shadow-sm" />
+            </div>
+            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-party-blue text-white rounded-full flex items-center justify-center border border-white shadow-xs">
+              <Pencil size={8} strokeWidth={3} />
+            </span>
+          </button>
+        ) : (
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-white shadow-sm border border-slate-100 flex-shrink-0">
+            <img 
+              src={getAvatarUrl(avatarKey)} 
+              alt="Avatar" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
         <div className="flex flex-col">
           <h1 className="text-xl font-bold text-slate-800 leading-tight">
             E aí, {userName}! 👋

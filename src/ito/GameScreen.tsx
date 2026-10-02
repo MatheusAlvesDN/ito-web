@@ -6,6 +6,7 @@ import type { Theme } from '../data';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { syncService, triggerVibration } from '../utils/syncService';
 import { audioService } from '../utils/audioService';
+import { getAvatarUrl, getPlayerAvatar } from '../utils/avatarService';
 import { ReactionsOverlay, ReactionsTray } from '../components/ReactionsOverlay';
 
 // Importações do DND Kit para Drag and Drop
@@ -63,9 +64,10 @@ interface SortableItemProps {
   phase: string;
   isWrong: boolean;
   disabled?: boolean;
+  avatarUrl?: string;
 }
 
-const SortablePlayerItem = ({ id, player, number, index, phase, isWrong, disabled = false }: SortableItemProps) => {
+const SortablePlayerItem = ({ id, player, number, index, phase, isWrong, disabled = false, avatarUrl }: SortableItemProps) => {
   // Hook do DND Kit para tornar o item arrastável
   const {
     attributes,
@@ -104,6 +106,14 @@ const SortablePlayerItem = ({ id, player, number, index, phase, isWrong, disable
         )}
         {phase === 'result' && <div className="w-8 flex justify-center text-slate-400 font-bold font-outfit">#{index + 1}</div>}
       </div>
+
+      {avatarUrl && (
+        <img
+          src={avatarUrl}
+          alt={player}
+          className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 p-0.5 object-contain mr-3 shrink-0"
+        />
+      )}
       
       <div className="flex-1 font-bold text-slate-800 text-lg select-none font-outfit">{player}</div>
       
@@ -126,7 +136,7 @@ type Props = {
   isHost?: boolean;
   syncGameState?: any;
   playerId?: string;
-  connectedPlayers?: { id: string; name: string }[];
+  connectedPlayers?: { id: string; name: string; avatar?: string }[];
   isMuted: boolean;
   toggleMute: () => void;
   saboteurMode?: boolean;
@@ -172,6 +182,12 @@ const GameScreen = ({
   const isVictory = isMultiplayer ? (syncGameState?.isVictory || false) : localIsVictory;
   const lives = isMultiplayer ? (syncGameState?.lives || 3) : localLives;
   const viewedPlayers = (isMultiplayer ? (syncGameState?.viewedPlayers || []) : []) as string[];
+
+  const getAvatarForPlayer = (name: string) => {
+    const cp = connectedPlayers.find(p => p.name === name);
+    if (cp && cp.avatar) return cp.avatar;
+    return getPlayerAvatar(name);
+  };
 
   // Reset visual de revelação própria ao mudar de fase
   useEffect(() => {
@@ -500,8 +516,15 @@ const GameScreen = ({
           <div className="flex-1 flex flex-col items-center justify-center animate-fade-in py-4">
             {isMultiplayer ? (
               <>
-                <h2 className="text-2xl font-black text-slate-800 mb-1 font-outfit">Sua Carta Secreta</h2>
-                <p className="text-slate-400 mb-6 uppercase tracking-widest text-[10px] font-bold">Olá, {connectedPlayers.find(p => p.id === playerId)?.name}</p>
+                <div className="flex flex-col items-center mb-4">
+                  <img
+                    src={getAvatarUrl(getAvatarForPlayer(connectedPlayers.find(p => p.id === playerId)?.name || ''))}
+                    alt="Seu avatar"
+                    className="w-16 h-16 rounded-2xl bg-white border-2 border-yellow-400 p-1 shadow-md object-contain mb-2"
+                  />
+                  <h2 className="text-2xl font-black text-slate-800 mb-0.5 font-outfit">Sua Carta Secreta</h2>
+                  <p className="text-slate-400 uppercase tracking-widest text-[10px] font-bold">Olá, {connectedPlayers.find(p => p.id === playerId)?.name}</p>
+                </div>
                 
                 <div className="w-full max-w-[280px] aspect-[3/4.2] relative perspective-1000">
                   <div className={`w-full h-full relative transition-all duration-500 transform-style-3d bg-white rounded-3xl border-2 shadow-card ${
@@ -560,8 +583,15 @@ const GameScreen = ({
               </>
             ) : (
               <>
-                <h2 className="text-2xl font-black text-slate-800 mb-1 font-outfit">Vez de {players[currentPlayerIndex]}</h2>
-                <p className="text-slate-400 mb-6 uppercase tracking-widest text-[10px] font-bold">Entregue o celular para ele(a)!</p>
+                <div className="flex flex-col items-center mb-4">
+                  <img
+                    src={getAvatarUrl(getAvatarForPlayer(players[currentPlayerIndex]))}
+                    alt={players[currentPlayerIndex]}
+                    className="w-16 h-16 rounded-2xl bg-white border-2 border-yellow-400 p-1 shadow-md object-contain mb-2"
+                  />
+                  <h2 className="text-2xl font-black text-slate-800 mb-0.5 font-outfit">Vez de {players[currentPlayerIndex]}</h2>
+                  <p className="text-slate-400 uppercase tracking-widest text-[10px] font-bold">Entregue o celular para ele(a)!</p>
+                </div>
                 
                 <div className="w-full max-w-[280px] aspect-[3/4.2] relative perspective-1000">
                   <div className={`w-full h-full relative transition-all duration-500 transform-style-3d bg-white rounded-3xl border-2 shadow-card ${
@@ -657,7 +687,14 @@ const GameScreen = ({
                           : 'bg-white border-slate-200/80 text-slate-800 hover:border-red-300 shadow-sm'
                       }`}
                     >
-                      <span className="font-bold text-sm">{p.name} {isMe && '(Você)'}</span>
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={getAvatarUrl(getAvatarForPlayer(p.name))}
+                          alt={p.name}
+                          className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 p-0.5 object-contain"
+                        />
+                        <span className="font-bold text-sm">{p.name} {isMe && '(Você)'}</span>
+                      </div>
                       {hasVoted && totalVotesOnP > 0 && (
                         <span className="bg-red-100 text-red-700 border border-red-200 text-[10px] px-2.5 py-0.5 rounded-full font-bold font-outfit">
                           {totalVotesOnP} {totalVotesOnP === 1 ? 'voto' : 'votos'}
@@ -689,7 +726,14 @@ const GameScreen = ({
                           : 'bg-white border-slate-200/80 text-slate-800 hover:border-red-300 shadow-sm animate-fade-in'
                       }`}
                     >
-                      <span className="font-bold text-sm">{playerName}</span>
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={getAvatarUrl(getAvatarForPlayer(playerName))}
+                          alt={playerName}
+                          className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 p-0.5 object-contain"
+                        />
+                        <span className="font-bold text-sm">{playerName}</span>
+                      </div>
                     </button>
                   );
                 })}
@@ -748,12 +792,30 @@ const GameScreen = ({
                   <div className="bg-white border border-slate-200/80 rounded-3xl p-6 w-full max-w-xs space-y-4 shadow-card animate-fade-in-scale">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-400 font-bold">O Sabotador era:</span>
-                      <span className="text-red-600 font-black uppercase tracking-wider font-outfit">{actualSaboteurName}</span>
+                      <div className="flex items-center gap-2">
+                        {actualSaboteurName && (
+                          <img
+                            src={getAvatarUrl(getAvatarForPlayer(actualSaboteurName))}
+                            alt={actualSaboteurName}
+                            className="w-6 h-6 rounded-md bg-slate-100 border border-slate-200 p-0.5 object-contain"
+                          />
+                        )}
+                        <span className="text-red-600 font-black uppercase tracking-wider font-outfit">{actualSaboteurName}</span>
+                      </div>
                     </div>
                     <div className="h-px bg-slate-100 w-full" />
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-400 font-bold">Acusado pelo grupo:</span>
-                      <span className="text-yellow-600 font-black uppercase tracking-wider font-outfit">{suspectName}</span>
+                      <div className="flex items-center gap-2">
+                        {suspectName && (
+                          <img
+                            src={getAvatarUrl(getAvatarForPlayer(suspectName))}
+                            alt={suspectName}
+                            className="w-6 h-6 rounded-md bg-slate-100 border border-slate-200 p-0.5 object-contain"
+                          />
+                        )}
+                        <span className="text-yellow-600 font-black uppercase tracking-wider font-outfit">{suspectName}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -879,6 +941,7 @@ const GameScreen = ({
                         phase={phase}
                         isWrong={isWrong}
                         disabled={phase === 'result' || (isMultiplayer && !isHost)}
+                        avatarUrl={getAvatarUrl(getAvatarForPlayer(player))}
                       />
                     );
                   })}

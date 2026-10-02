@@ -246,6 +246,8 @@ export default function App() {
     syncGameState,
     playerName,
     setPlayerName,
+    playerAvatar,
+    handleUpdateAvatar,
     playerId,
     isConnecting,
     handleConnect,
@@ -313,6 +315,8 @@ export default function App() {
             onBack={() => dispatch({ type: 'SET_SCREEN', screen: 'connection-selection' })}
             playerName={playerName}
             setPlayerName={setPlayerName}
+            playerAvatar={playerAvatar}
+            setPlayerAvatar={handleUpdateAvatar}
             isConnecting={isConnecting}
             handleConnect={(ip, action, code) => handleConnect(ip, action, code, () => dispatch({ type: 'SET_SCREEN', screen: 'multiplayer-lobby' }))}
             gameMode={state.gameMode}
@@ -329,6 +333,8 @@ export default function App() {
             roomCode={roomCode}
             isHost={isHost}
             connectedPlayers={connectedPlayers}
+            playerId={playerId}
+            onUpdateAvatar={handleUpdateAvatar}
             onSelectGameMode={(mode) => {
               dispatch({ type: 'SET_GAME_MODE', gameMode: mode });
               if (connectionType === 'multiplayer' && isHost) {

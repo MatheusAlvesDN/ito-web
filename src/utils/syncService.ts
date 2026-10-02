@@ -15,6 +15,7 @@ export const triggerVibration = (pattern: number | number[]) => {
 export type ConnectedPlayer = {
   id: string;
   name: string;
+  avatar?: string;
 };
 
 type SyncCallbackMap = {
@@ -36,6 +37,7 @@ class SyncService {
   public currentPlayerId: string | null = null;
   public isHost: boolean = false;
   public playerName: string | null = null;
+  public playerAvatar: string | null = null;
   private hostConn: DataConnection | null = null; // Para clientes, conexão direta com o host
   private connectedPlayers: ConnectedPlayer[] = [];
   private gameState: any = null;
@@ -93,9 +95,10 @@ class SyncService {
   }
 
   // Cria a sala WebRTC P2P atuando como Host (Autoritativo)
-  public createRoom(hostName: string) {
+  public createRoom(hostName: string, avatar?: string) {
     this.isHost = true;
     this.playerName = hostName;
+    this.playerAvatar = avatar || null;
     this.connectedPlayers = [];
     this.connections.clear();
 
@@ -120,7 +123,7 @@ class SyncService {
       this.currentPlayerId = id;
       
       // O Host é o primeiro integrante da lista de jogadores
-      this.connectedPlayers = [{ id, name: hostName }];
+      this.connectedPlayers = [{ id, name: hostName, avatar: avatar || undefined }];
 
       if (this.callbacks.onRoomCreated) {
         this.callbacks.onRoomCreated(roomCode, id, [...this.connectedPlayers]);
@@ -139,10 +142,10 @@ class SyncService {
           const msg = typeof data === 'string' ? JSON.parse(data) : data;
           
           if (msg.type === 'JOIN') {
-            const newPlayer: ConnectedPlayer = { id: conn.peer, name: msg.playerName };
+            const newPlayer: ConnectedPlayer = { id: conn.peer, name: msg.playerName, avatar: msg.avatar };
             this.connections.set(conn.peer, conn);
             
-            // Adiciona o jogador se já não estiver na lista ou atualiza o nome
+            // Adiciona o jogador se já não estiver na lista ou atualiza o nome e avatar
             const existingIndex = this.connectedPlayers.findIndex(p => p.id === conn.peer);
             if (existingIndex >= 0) {
               const updated = [...this.connectedPlayers];
@@ -172,6 +175,24 @@ class SyncService {
               type: 'PLAYER_JOINED',
               players: [...this.connectedPlayers]
             }, conn.peer);
+          }
+
+          if (msg.type === 'UPDATE_AVATAR') {
+            const pIndex = this.connectedPlayers.findIndex(p => p.id === conn.peer);
+            if (pIndex >= 0) {
+              const updated = [...this.connectedPlayers];
+              updated[pIndex] = { ...updated[pIndex], avatar: msg.avatar };
+              this.connectedPlayers = updated;
+
+              if (this.callbacks.onPlayerJoined) {
+                this.callbacks.onPlayerJoined([...this.connectedPlayers]);
+              }
+
+              this.broadcast({
+                type: 'PLAYERS_UPDATED',
+                players: [...this.connectedPlayers]
+              });
+            }
           }
 
           if (msg.type === 'CLIENT_STATE_UPDATE') {
@@ -245,9 +266,10 @@ class SyncService {
   }
 
   // Permite a entrada de um cliente buscando o Host
-  public joinRoom(roomCode: string, playerName: string) {
+  public joinRoom(roomCode: string, playerName: string, avatar?: string) {
     this.isHost = false;
     this.playerName = playerName;
+    this.playerAvatar = avatar || null;
     this.currentRoomCode = roomCode.toUpperCase().trim();
     this.isReconnecting = false;
     this.reconnectAttempts = 0;
@@ -266,7 +288,8 @@ class SyncService {
         console.log('Conexão P2P de sinalização aberta com o Host! Enviando registro...');
         this.sendJson(this.hostConn!, {
           type: 'JOIN',
-          playerName
+          playerName,
+          avatar
         });
       });
 
@@ -303,7 +326,7 @@ class SyncService {
           }
         }
 
-        if (msg.type === 'PLAYER_JOINED') {
+        if (msg.type === 'PLAYER_JOINED' || msg.type === 'PLAYERS_UPDATED') {
           this.connectedPlayers = Array.isArray(msg.players) ? [...msg.players] : [];
           if (this.callbacks.onPlayerJoined) {
             this.callbacks.onPlayerJoined([...this.connectedPlayers]);
@@ -423,7 +446,8 @@ class SyncService {
       // Envia o JOIN para sinalizar ao Host que estamos de volta e receber o estado atualizado
       this.sendJson(this.hostConn!, {
         type: 'JOIN',
-        playerName: this.playerName
+        playerName: this.playerName,
+        avatar: this.playerAvatar
       });
     });
 
@@ -492,6 +516,33 @@ class SyncService {
           reactionType
         });
       }
+    }
+  }
+
+  // Atualiza o avatar do jogador local e transmite para todos
+  public updatePlayerAvatar(newAvatar: string) {
+    this.playerAvatar = newAvatar;
+    if (this.isHost) {
+      const hostIndex = this.connectedPlayers.findIndex(p => p.id === this.currentPlayerId);
+      if (hostIndex >= 0) {
+        const updated = [...this.connectedPlayers];
+        updated[hostIndex] = { ...updated[hostIndex], avatar: newAvatar };
+        this.connectedPlayers = updated;
+
+        if (this.callbacks.onPlayerJoined) {
+          this.callbacks.onPlayerJoined([...this.connectedPlayers]);
+        }
+
+        this.broadcast({
+          type: 'PLAYERS_UPDATED',
+          players: [...this.connectedPlayers]
+        });
+      }
+    } else if (this.hostConn && this.hostConn.open) {
+      this.sendJson(this.hostConn, {
+        type: 'UPDATE_AVATAR',
+        avatar: newAvatar
+      });
     }
   }
 

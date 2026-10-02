@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { type WhatDoYouKnowTheme, WHATDOYOUKNOW_THEMES } from './data';
 import { syncService, triggerVibration } from '../utils/syncService';
 import { audioService } from '../utils/audioService';
+import { getAvatarUrl, getPlayerAvatar } from '../utils/avatarService';
 
 // Importando os novos componentes
 import QuestionStep from './components/QuestionStep';
@@ -18,7 +19,7 @@ type Props = {
   isHost?: boolean;
   syncGameState?: any;
   playerId?: string;
-  connectedPlayers?: { id: string; name: string }[];
+  connectedPlayers?: { id: string; name: string; avatar?: string }[];
   isMuted: boolean;
   toggleMute: () => void;
 };
@@ -56,6 +57,14 @@ export default function GameScreenWhatDoYouKnow({
 
   // Lista de jogadores (nomes)
   const activePlayers = isMultiplayer ? connectedPlayers.map(p => p.name) : players;
+
+  const getAvatarForPlayer = (name: string) => {
+    const cp = connectedPlayers.find(p => p.name === name);
+    if (cp && cp.avatar) return cp.avatar;
+    return getPlayerAvatar(name);
+  };
+
+  const getPlayerAvatarUrl = (name: string) => getAvatarUrl(getAvatarForPlayer(name));
 
   // --- LÓGICA DE INICIALIZAÇÃO ---
 
@@ -270,6 +279,7 @@ export default function GameScreenWhatDoYouKnow({
         isHost={isHost}
         isMyTurn={isMyTurn}
         handleGoToScoring={handleGoToScoring}
+        getAvatar={getPlayerAvatarUrl}
       />
     );
   }
@@ -286,6 +296,7 @@ export default function GameScreenWhatDoYouKnow({
         selectedWinners={selectedWinners}
         toggleWinner={toggleWinner}
         handleConfirmScores={handleConfirmScores}
+        getAvatar={getPlayerAvatarUrl}
       />
     );
   }
@@ -299,6 +310,7 @@ export default function GameScreenWhatDoYouKnow({
         isMultiplayer={isMultiplayer}
         isHost={isHost}
         handleNextRound={handleNextRound}
+        getAvatar={getPlayerAvatarUrl}
       />
     );
   }
