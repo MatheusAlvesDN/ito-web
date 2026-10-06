@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(['celebrities']));
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set([WHOAMI_THEMES[0]?.id || 'historico']));
   const [customThemes, setCustomThemes] = useState<WhoAmITheme[]>([]);
   const [showModal, setShowModal] = useState(false);
 
@@ -196,12 +196,15 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
                   : 'border-slate-100 hover:border-slate-200'
               }`}
             >
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-orange-50 text-orange-500 shadow-xs">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${theme.color || 'bg-orange-50'} ${theme.textColor || 'text-orange-500'}`}>
                 <Icon size={24} />
               </div>
               <div className="flex-1 pr-2 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                   <h3 className="font-bold text-base text-slate-800 truncate">{theme.name}</h3>
+                  <span className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0">
+                    {theme.personalities.length}
+                  </span>
                   {isCustom && (
                     <span className="bg-orange-50 text-orange-600 border border-orange-100 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">
                       Custom
