@@ -11,7 +11,8 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { type Theme, IMPOSTOR_SCENARIOS, type ImpostorScenario } from './data';
+import { api } from '../services/api';
+import type { Theme, ImpostorScenario } from '../types/game';
 import { syncService, triggerVibration } from '../utils/syncService';
 import { audioService } from '../utils/audioService';
 import { getAvatarUrl, getPlayerAvatar } from '../utils/avatarService';
@@ -110,46 +111,46 @@ export default function GameScreenImpostor({
     return `${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // --- LÓGICA DE INICIALIZAÇÃO ---
+  // --- LÓGICA DE INICIALIZAÇÃO VIA API ---
+  const [scenarios, setScenarios] = useState<ImpostorScenario[]>([]);
 
-  const getScenarios = () => {
-    let pool: ImpostorScenario[] = [...IMPOSTOR_SCENARIOS['default']];
-    
-    themes.forEach((t) => {
-      if (t.id.startsWith('custom_theme_')) {
-        try {
-          const saved = localStorage.getItem('impostor_custom_scenarios_' + t.id);
-          if (saved) {
-            pool = [...pool, ...JSON.parse(saved)];
+  useEffect(() => {
+    async function loadScenarios() {
+      let pool: ImpostorScenario[] = [];
+      const themeList = themes.length > 0 ? themes : [{ id: 'free' } as Theme];
+      for (const t of themeList) {
+        if (t.id.startsWith('custom_theme_')) {
+          try {
+            const saved = localStorage.getItem('impostor_custom_scenarios_' + t.id);
+            if (saved) pool.push(...JSON.parse(saved));
+          } catch (err) {
+            console.error(err);
           }
-        } catch (err) {
-          console.error(err);
+        } else {
+          try {
+            const res = await api.getThemeContent('impostor', t.id);
+            if (res.scenarios) {
+              pool.push(...res.scenarios);
+            }
+          } catch (err) {
+            console.error(err);
+          }
         }
-      } else if (IMPOSTOR_SCENARIOS[t.id]) {
-        pool = [...pool, ...IMPOSTOR_SCENARIOS[t.id]];
       }
-    });
-    return pool;
-  };
+      setScenarios(pool);
+    }
+    loadScenarios();
+  }, [themes]);
 
   const setupRound = () => {
-    if (players.length < 3) return;
+    if (players.length < 3 || scenarios.length === 0) return;
 
     // 1. Sortear Impostor
     const newImpostorIndex = Math.floor(Math.random() * players.length);
     setLocalImpostorIndex(newImpostorIndex);
 
-    // 2. Sortear Perguntas do Data.ts
-    const scenarios = getScenarios();
-    
-    if (scenarios.length === 0) {
-       setLocalHonestQuestion('Erro: Sem perguntas');
-       setLocalImpostorQuestion('Erro');
-       return;
-    }
-
+    // 2. Sortear Perguntas do Banco de Dados
     const randomScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-    
     const honestQ = randomScenario.honest;
     const impostorQ = randomScenario.impostorVariations[
       Math.floor(Math.random() * randomScenario.impostorVariations.length)
@@ -166,16 +167,13 @@ export default function GameScreenImpostor({
   };
 
   const setupMultiplayerRound = () => {
-    if (!connectedPlayers || connectedPlayers.length < 3) return;
+    if (!connectedPlayers || connectedPlayers.length < 3 || scenarios.length === 0) return;
 
     // 1. Sortear Impostor por ID
     const randomPlayer = connectedPlayers[Math.floor(Math.random() * connectedPlayers.length)];
     const impostorId = randomPlayer.id;
 
     // 2. Sortear Perguntas
-    const scenarios = getScenarios();
-    if (scenarios.length === 0) return;
-
     const randomScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
     const honestQ = randomScenario.honest;
     const impostorQ = randomScenario.impostorVariations[
@@ -198,16 +196,16 @@ export default function GameScreenImpostor({
   };
 
   useEffect(() => {
-    if (!isMultiplayer) {
+    if (!isMultiplayer && scenarios.length > 0) {
       setupRound();
     }
-  }, [roundKey]);
+  }, [roundKey, scenarios, isMultiplayer]);
 
   useEffect(() => {
-    if (isMultiplayer && isHost && syncGameState?.phase === 'setup') {
+    if (isMultiplayer && isHost && syncGameState?.phase === 'setup' && scenarios.length > 0) {
       setupMultiplayerRound();
     }
-  }, [isHost, isMultiplayer, syncGameState?.phase, syncGameState?.roundKey]);
+  }, [isHost, isMultiplayer, syncGameState?.phase, syncGameState?.roundKey, scenarios]);
 
   // --- HANDLERS ---
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Check, Ghost, Plus, Trash2, X, Sparkles, Key, ArrowRight } from 'lucide-react';
-import { THEMES, type Theme, type ImpostorScenario } from './data';
+import { api } from '../services/api';
+import type { Theme, ImpostorScenario } from '../types/game';
 import { triggerVibration } from '../utils/syncService';
 import { generateImpostorTheme } from '../utils/geminiService';
 import { toast } from 'sonner';
@@ -13,8 +14,18 @@ type Props = {
 
 export default function ThemeSelectionImpostor({ onBack, onStart }: Props) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [dbThemes, setDbThemes] = useState<Theme[]>([]);
   const [customThemes, setCustomThemes] = useState<Theme[]>([]);
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    api.getThemes('impostor').then((loaded) => {
+      setDbThemes(loaded);
+      if (loaded.length > 0) {
+        setSelectedIds([loaded[0].id]);
+      }
+    }).catch(console.error);
+  }, []);
 
   // Form States
   const [themeName, setThemeName] = useState('');
@@ -177,7 +188,7 @@ export default function ThemeSelectionImpostor({ onBack, onStart }: Props) {
     toast.success('Novo tema salvo!');
   };
 
-  const allThemes = [...THEMES, ...customThemes];
+  const allThemes = [...dbThemes, ...customThemes];
   const selectedThemes = allThemes.filter((t) => selectedIds.includes(t.id));
 
   return (

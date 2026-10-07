@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Plus, Trash2, HelpCircle, X, ArrowRight, Check } from 'lucide-react';
-import { WHATDOYOUKNOW_THEMES, type WhatDoYouKnowTheme } from './data';
+import { api } from '../services/api';
+import type { WhatDoYouKnowTheme } from '../types/game';
 import { triggerVibration } from '../utils/syncService';
 import { TagChip } from '../components/common/TagChip';
 
@@ -11,6 +12,7 @@ type Props = {
 
 export default function ThemeSelectionWhatDoYouKnow({ onBack, onStart }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(['pessoal']));
+  const [dbThemes, setDbThemes] = useState<WhatDoYouKnowTheme[]>([]);
   const [customThemes, setCustomThemes] = useState<WhatDoYouKnowTheme[]>([]);
   const [showModal, setShowModal] = useState(false);
 
@@ -20,8 +22,12 @@ export default function ThemeSelectionWhatDoYouKnow({ onBack, onStart }: Props) 
   const [questionsText, setQuestionsText] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Carrega temas customizados do localStorage
+  // Carrega temas do banco e temas customizados do localStorage
   useEffect(() => {
+    api.getThemes('whatdoyouknow').then((loaded) => {
+      setDbThemes(loaded);
+    }).catch(console.error);
+
     const saved = localStorage.getItem('whatdoyouknow_custom_themes');
     if (saved) {
       try {
@@ -100,7 +106,7 @@ export default function ThemeSelectionWhatDoYouKnow({ onBack, onStart }: Props) 
     triggerVibration(100);
   };
 
-  const allThemes = [...WHATDOYOUKNOW_THEMES, ...customThemes];
+  const allThemes = [...dbThemes, ...customThemes];
   const selectedThemes = allThemes.filter(t => selectedIds.has(t.id));
 
   return (
@@ -158,7 +164,7 @@ export default function ThemeSelectionWhatDoYouKnow({ onBack, onStart }: Props) 
                 </div>
                 <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium line-clamp-2">{theme.description}</p>
                 <span className="text-[11px] text-slate-400 font-semibold mt-1 block">
-                  {theme.questions.length} perguntas
+                  {theme.questions?.length ? `${theme.questions.length} perguntas` : 'Perguntas temáticas'}
                 </span>
               </div>
               

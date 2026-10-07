@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Plus, Trash2, X, Sparkles, Key, ScanFace, ArrowRight, Check } from 'lucide-react';
-import { WHOAMI_THEMES, type WhoAmITheme } from './data';
+import { api } from '../services/api';
+import type { WhoAmITheme } from '../types/game';
 import { triggerVibration } from '../utils/syncService';
 import { generateWhoAmITheme } from '../utils/geminiService';
 import { toast } from 'sonner';
@@ -12,7 +13,8 @@ interface Props {
 }
 
 export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set([WHOAMI_THEMES[0]?.id || 'historico']));
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(['historico']));
+  const [dbThemes, setDbThemes] = useState<WhoAmITheme[]>([]);
   const [customThemes, setCustomThemes] = useState<WhoAmITheme[]>([]);
   const [showModal, setShowModal] = useState(false);
 
@@ -69,6 +71,13 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
   };
 
   useEffect(() => {
+    api.getThemes('whoami').then((loaded) => {
+      setDbThemes(loaded);
+      if (loaded.length > 0) {
+        setSelectedIds(new Set([loaded[0].id]));
+      }
+    }).catch(console.error);
+
     const saved = localStorage.getItem('whoami_custom_themes');
     if (saved) {
       try {
@@ -152,7 +161,7 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
     toast.success('Novo tema criado!');
   };
 
-  const allThemes = [...WHOAMI_THEMES, ...customThemes];
+  const allThemes = [...dbThemes, ...customThemes];
   const selectedThemes = allThemes.filter(t => selectedIds.has(t.id));
 
   return (
@@ -202,9 +211,11 @@ export default function ThemeSelectionWhoAmI({ onBack, onStart }: Props) {
               <div className="flex-1 pr-2 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                   <h3 className="font-bold text-base text-slate-800 truncate">{theme.name}</h3>
-                  <span className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0">
-                    {theme.personalities.length}
-                  </span>
+                  {theme.personalities && (
+                    <span className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0">
+                      {theme.personalities.length}
+                    </span>
+                  )}
                   {isCustom && (
                     <span className="bg-orange-50 text-orange-600 border border-orange-100 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">
                       Custom

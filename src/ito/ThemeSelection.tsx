@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Check, Settings as SettingsIcon, Info } from 'lucide-react';
-import { THEMES, type Theme } from './data';
+import { api } from '../services/api';
+import type { Theme } from '../types/game';
 import { triggerVibration } from '../utils/syncService';
 import { SegmentedControl } from '../components/common/SegmentedControl';
 import { Stepper } from '../components/common/Stepper';
@@ -21,7 +22,8 @@ type Props = {
 };
 
 export default function ThemeSelectionClassic({ onBack, onStart }: Props) {
-  const [selectedIds, setSelectedIds] = useState<string[]>(['free', 'food']);
+  const [selectedIds, setSelectedIds] = useState<string[]>(['free', 'classic']);
+  const [dbThemes, setDbThemes] = useState<Theme[]>([]);
   const [customThemes, setCustomThemes] = useState<Theme[]>([]);
   const [saboteurMode] = useState(false);
 
@@ -33,6 +35,10 @@ export default function ThemeSelectionClassic({ onBack, onStart }: Props) {
   useEffect(() => {
     // Normalizar tempo inicial
     setTimeLimit(0);
+    // Carregar temas do banco de dados
+    api.getThemes('classic').then((loaded) => {
+      setDbThemes(loaded);
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -52,7 +58,7 @@ export default function ThemeSelectionClassic({ onBack, onStart }: Props) {
     });
   };
 
-  const allThemes = [...THEMES, ...customThemes];
+  const allThemes = [...dbThemes, ...customThemes];
   const selectedThemes = allThemes.filter((t) => selectedIds.includes(t.id));
 
   return (
@@ -120,7 +126,7 @@ export default function ThemeSelectionClassic({ onBack, onStart }: Props) {
            </div>
 
            <div className="flex flex-col gap-3">
-             {THEMES.map((theme, index) => {
+             {allThemes.map((theme, index) => {
                const isSelected = selectedIds.includes(theme.id);
                // Mock difficulties based on theme
                const difficulty = index % 3 === 0 ? 'Fácil' : index % 3 === 1 ? 'Médio' : 'Difícil';

@@ -15,10 +15,11 @@ import {
   RefreshCw,
   Plus, 
   Minus, 
+  Crown,
   ChevronRight,
-  Crown
 } from 'lucide-react';
-import { type WhoAmITheme, WHOAMI_THEMES } from './data';
+import { api } from '../services/api';
+import type { WhoAmITheme } from '../types/game';
 import { syncService, triggerVibration } from '../utils/syncService';
 import { audioService } from '../utils/audioService';
 import { ReactionsOverlay, ReactionsTray } from '../components/ReactionsOverlay';
@@ -142,26 +143,42 @@ export default function GameScreenWhoAmI({
     return `${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const getThemePersonalities = (t: WhoAmITheme) => {
-    if (t.personalities && Array.isArray(t.personalities) && t.personalities.length > 0) {
-      return t.personalities;
-    }
-    if (t.id.startsWith('custom_theme_')) {
-      try {
-        const saved = localStorage.getItem('whoami_custom_personalities_' + t.id);
-        if (saved) return JSON.parse(saved);
-      } catch {
-        // fallback
+  const [personalitiesPool, setPersonalitiesPool] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadPersonalities() {
+      let pool: string[] = [];
+      const themeList = themes.length > 0 ? themes : [{ id: 'historico' } as WhoAmITheme];
+      for (const t of themeList) {
+        if (t.personalities && Array.isArray(t.personalities) && t.personalities.length > 0) {
+          pool.push(...t.personalities);
+        } else if (t.id.startsWith('custom_theme_')) {
+          try {
+            const saved = localStorage.getItem('whoami_custom_personalities_' + t.id);
+            if (saved) pool.push(...JSON.parse(saved));
+          } catch {}
+        } else {
+          try {
+            const res = await api.getThemeContent('whoami', t.id, 100);
+            if (res.personalities) pool.push(...res.personalities);
+          } catch (err) {
+            console.error(err);
+          }
+        }
       }
+      setPersonalitiesPool(pool);
     }
-    const defaultTheme = WHOAMI_THEMES.find(item => item.id === t.id);
-    return defaultTheme ? defaultTheme.personalities : [];
+    loadPersonalities();
+  }, [themes]);
+
+  const getThemePersonalities = (_t: WhoAmITheme) => {
+    return personalitiesPool;
   };
 
   // Initialize game fresh
   const startGame = () => {
     // Gather personalities from chosen themes
-    let allPersonalities = themes.flatMap(t => getThemePersonalities(t));
+    let allPersonalities = personalitiesPool.length > 0 ? [...personalitiesPool] : themes.flatMap(t => t.personalities || []);
     allPersonalities = [...allPersonalities].sort(() => 0.5 - Math.random());
     
     let selected: string[] = [];
@@ -219,17 +236,17 @@ export default function GameScreenWhoAmI({
   };
 
   useEffect(() => {
-    if (!isMultiplayer) {
+    if (!isMultiplayer && personalitiesPool.length > 0) {
       startGame();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [players, themes]);
+  }, [players, themes, personalitiesPool]);
 
   useEffect(() => {
-    if (isMultiplayer && isHost && syncGameState?.phase === 'setup') {
+    if (isMultiplayer && isHost && syncGameState?.phase === 'setup' && personalitiesPool.length > 0) {
       startMultiplayerGame();
     }
-  }, [isHost, isMultiplayer, syncGameState?.phase, syncGameState?.roundKey]);
+  }, [isHost, isMultiplayer, syncGameState?.phase, syncGameState?.roundKey, personalitiesPool]);
 
   const handleReveal = () => {
     audioService.playFlip();

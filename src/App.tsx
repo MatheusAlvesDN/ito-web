@@ -1,6 +1,5 @@
 import React, { Suspense, useEffect, useReducer, useState } from 'react';
 import { RefreshCw, Volume2, VolumeX } from 'lucide-react';
-import { THEMES } from './data';
 import { syncService } from './utils/syncService';
 import { Toaster } from 'sonner';
 import { audioService } from './utils/audioService';
@@ -214,8 +213,7 @@ export default function App() {
     if (saved) {
       try {
         const parsed: PersistedState = JSON.parse(saved);
-        // Recria os objetos Theme a partir dos IDs
-        const themes = THEMES.filter(t => parsed.themeIds.includes(t.id));
+        const themes = (parsed.themeIds || []).map((id: string) => ({ id, name: id, description: '', color: '', textColor: '', icon: '' }));
         return {
           screen: parsed.screen,
           gameMode: parsed.gameMode,
@@ -260,7 +258,7 @@ export default function App() {
       screen: state.screen,
       gameMode: state.gameMode,
       players: state.players,
-      themeIds: state.themes.map(t => t.id)
+      themeIds: (state.themes || []).map((t: any) => t.id)
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   }, [state]);

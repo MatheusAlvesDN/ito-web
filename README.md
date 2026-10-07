@@ -53,39 +53,33 @@ O aplicativo foi completamente reformulado para proporcionar uma experiência **
 
 ## 🛠️ Stack Tecnológica
 
-O projeto foi construído usando tecnologias modernas focadas em performance e portabilidade mobile rápida:
-1. **Core:** React 19 + TypeScript (tipagem estrita de estados de jogos e telas).
-2. **Estilização:** Tailwind CSS v3 (layouts flexbox e grid avançados, efeitos de transição) + Vanilla CSS utilitário para animações e perspective 3D.
-3. **Drag & Drop:** `@dnd-kit/core` e `@dnd-kit/sortable` para movimentação de jogadores com suporte a toque tátil e amortecimento de arrasto.
-4. **Haptics & Wake Lock Nativos:** Vibração tátil responsiva (`hapticsService.ts` utilizando Web Vibration API / Capacitor) e prevenção anti-bloqueio de tela (`wakeLockService.ts` utilizando Screen Wake Lock API).
-5. **Multiplayer & QR Code:** Sincronização WebRTC em tempo real (PeerJS) com sala de espera interativa, convite por link direto e modal de leitura por QR Code.
-6. **Vite:** Rolldown-Vite para build instantâneo e bundling de alta eficiência para web e mobile.
-7. **Mobile Wrapper (Capacitor v8):** Conversão nativa simples para Android e iOS, aproveitando o código web diretamente com webview nativa otimizada de alta velocidade.
-
+O projeto foi modernizado para uma arquitetura Web completa com backend em Python:
+1. **Frontend:** React 19 + TypeScript + Tailwind CSS v3 + Vite.
+2. **Backend:** Python 3.12 + FastAPI + SQLAlchemy 2.0 + WebSockets.
+3. **Banco de Dados:** SQLite (desenvolvimento) / PostgreSQL (produção).
+4. **Drag & Drop:** `@dnd-kit/core` e `@dnd-kit/sortable`.
+5. **Multiplayer Online:** Salas e sincronização em tempo real via WebSockets.
 
 ---
 
-## 📱 Sincronização e Builds Nativos (Capacitor)
+## 🚀 Como Executar o Projeto
 
-Para gerar e sincronizar os assets de produção com a pasta nativa do seu projeto mobile (Android/iOS), utilize os seguintes comandos no terminal a partir do diretório raiz:
+### 1. Iniciar o Backend em Python:
+No diretório raiz:
+```bash
+npm run backend
+```
+Isso iniciará a API FastAPI em `http://localhost:8000` com documentação interativa em `http://localhost:8000/docs`.
 
-1. **Gere os arquivos estáticos compilados para produção:**
-   ```bash
-   npm run build
-   ```
+*(Opcional) Para repopular o banco de dados inicial a qualquer momento:*
+```bash
+npm run seed
+```
 
-2. **Sincronize a build com o Capacitor:**
-   ```bash
-   npx cap sync
-   ```
+### 2. Iniciar o Frontend Web:
+Em outro terminal no diretório raiz:
+```bash
+npm run dev
+```
+Acesse `http://localhost:5173` no seu navegador. As chamadas `/api` e conexões `/ws` são automaticamente direcionadas para o backend via proxy.
 
-3. **Abrir o projeto no Android Studio:**
-   ```bash
-   npx cap open android
-   ```
-
-4. **Compilar a APK de testes direto pelo terminal (PowerShell):**
-   ```bash
-   cd android
-   ./gradlew.bat assembleDebug
-   ```

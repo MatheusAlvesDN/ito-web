@@ -1,16 +1,26 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // CORREÇÃO: Usar string vazia '' é a forma mais segura para caminhos relativos no Android
-  base: '', 
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://localhost:8000',
+        ws: true,
+      },
+    },
+  },
   build: {
     outDir: 'dist',
-    emptyOutDir: true, // Garante que a pasta antiga seja apagada antes de criar a nova
-    // IMPORTANTE: Garante compatibilidade com WebViews de Androids um pouco mais antigos
-    target: 'es2015',
+    emptyOutDir: true,
+    target: 'esnext',
     chunkSizeWarningLimit: 1000,
   },
-})
+});

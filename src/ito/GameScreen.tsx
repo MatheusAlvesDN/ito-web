@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Dices, Check, Unlock, Star, Cloud, RefreshCw, Lock, GripVertical, Heart, Volume2, VolumeX, Home, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
-import { QUESTIONS_DB } from './data';
-import type { Theme } from '../data';
+import { api } from '../services/api';
+import type { Theme } from '../types/game';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { syncService, triggerVibration } from '../utils/syncService';
 import { audioService } from '../utils/audioService';
@@ -165,6 +165,30 @@ const GameScreen = ({
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
   const [localLives, setLocalLives] = useState(3);
+  const [questionsByTheme, setQuestionsByTheme] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    async function loadThemeQuestions() {
+      const map: Record<string, string[]> = {};
+      for (const t of themes) {
+        if (t.id.startsWith('custom_theme_')) {
+          try {
+            const saved = localStorage.getItem('ito_custom_questions_' + t.id);
+            if (saved) map[t.id] = JSON.parse(saved);
+          } catch {}
+        } else if (t.id !== 'free') {
+          try {
+            const res = await api.getThemeContent('classic', t.id);
+            if (res.questions) map[t.id] = res.questions;
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      }
+      setQuestionsByTheme(map);
+    }
+    loadThemeQuestions();
+  }, [themes]);
 
   // Estados específicos para o modo Sabotador
   const [localSaboteurName, setLocalSaboteurName] = useState<string>('');
@@ -289,7 +313,7 @@ const GameScreen = ({
           return [];
         }
       }
-      return QUESTIONS_DB[t.id] || [];
+      return questionsByTheme[t.id] || [];
     };
 
     const isFreeMode = themes.some(t => t.id === 'free');

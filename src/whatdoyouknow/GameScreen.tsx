@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { type WhatDoYouKnowTheme, WHATDOYOUKNOW_THEMES } from './data';
+import { api } from '../services/api';
+import type { WhatDoYouKnowTheme } from '../types/game';
 import { syncService, triggerVibration } from '../utils/syncService';
 import { audioService } from '../utils/audioService';
 import { getAvatarUrl, getPlayerAvatar } from '../utils/avatarService';
@@ -66,34 +67,41 @@ export default function GameScreenWhatDoYouKnow({
 
   const getPlayerAvatarUrl = (name: string) => getAvatarUrl(getAvatarForPlayer(name));
 
-  // --- LÓGICA DE INICIALIZAÇÃO ---
+  // --- LÓGICA DE INICIALIZAÇÃO VIA API ---
+  const [questionsPool, setQuestionsPool] = useState<string[]>([]);
 
-  const getAllQuestions = () => {
-    let pool: string[] = [];
-    themes.forEach((t) => {
-      if (t.questions && Array.isArray(t.questions) && t.questions.length > 0) {
-        pool = [...pool, ...t.questions];
-      } else if (t.id.startsWith('custom_theme_')) {
-        try {
-          const saved = localStorage.getItem('whatdoyouknow_custom_themes');
-          if (saved) {
-            const list: WhatDoYouKnowTheme[] = JSON.parse(saved);
-            const found = list.find(item => item.id === t.id);
-            if (found?.questions) {
-              pool = [...pool, ...found.questions];
+  useEffect(() => {
+    async function loadQuestions() {
+      let pool: string[] = [];
+      const themeList = themes.length > 0 ? themes : [{ id: 'pessoal' } as WhatDoYouKnowTheme];
+      for (const t of themeList) {
+        if (t.questions && Array.isArray(t.questions) && t.questions.length > 0) {
+          pool.push(...t.questions);
+        } else if (t.id.startsWith('custom_theme_')) {
+          try {
+            const saved = localStorage.getItem('whatdoyouknow_custom_themes');
+            if (saved) {
+              const list: WhatDoYouKnowTheme[] = JSON.parse(saved);
+              const found = list.find((item) => item.id === t.id);
+              if (found?.questions) pool.push(...found.questions);
             }
+          } catch {}
+        } else {
+          try {
+            const res = await api.getThemeContent('whatdoyouknow', t.id);
+            if (res.questions) pool.push(...res.questions);
+          } catch (err) {
+            console.error(err);
           }
-        } catch {
-          // fallback
-        }
-      } else {
-        const defaultTheme = WHATDOYOUKNOW_THEMES.find(item => item.id === t.id);
-        if (defaultTheme?.questions) {
-          pool = [...pool, ...defaultTheme.questions];
         }
       }
-    });
-    return pool;
+      setQuestionsPool(pool);
+    }
+    loadQuestions();
+  }, [themes]);
+
+  const getAllQuestions = () => {
+    return questionsPool;
   };
 
   const getNextTarget = (currentRemaining: string[], allPlayers: string[]) => {
@@ -181,16 +189,16 @@ export default function GameScreenWhatDoYouKnow({
   };
 
   useEffect(() => {
-    if (!isMultiplayer) {
+    if (!isMultiplayer && questionsPool.length > 0) {
       setupRound();
     }
-  }, [roundKey]);
+  }, [roundKey, questionsPool, isMultiplayer]);
 
   useEffect(() => {
-    if (isMultiplayer && isHost && syncGameState?.phase === 'setup') {
+    if (isMultiplayer && isHost && syncGameState?.phase === 'setup' && questionsPool.length > 0) {
       setupMultiplayerRound();
     }
-  }, [isHost, isMultiplayer, syncGameState?.phase, syncGameState?.roundKey]);
+  }, [isHost, isMultiplayer, syncGameState?.phase, syncGameState?.roundKey, questionsPool]);
 
   // --- HANDLERS ---
 
