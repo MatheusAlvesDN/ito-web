@@ -1,12 +1,12 @@
 {
-  "name": "Party Games - Mobile Experience",
+  "name": "Party Games",
   "short_name": "Party Games",
-  "description": "Plataforma premium de jogos de tabuleiro sociais para grupos e festas.",
+  "description": "Jogos de festa para jogar no mesmo celular ou online com os amigos.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#020617",
-  "theme_color": "#020617",
+  "background_color": "#FBF5EE",
+  "theme_color": "#E8731A",
   "icons": [
     {
       "src": "/vite.svg",

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Text, ForeignKey, Boolean, JSON
+from sqlalchemy import Column, String, Integer, Text, ForeignKey, Boolean, JSON, text
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -9,6 +9,7 @@ class Game(Base):
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
     icon = Column(String(50), default="Gamepad2")
+    is_active = Column(Boolean, nullable=False, default=True, server_default=text("1"))
 
     themes = relationship("Theme", back_populates="game", cascade="all, delete-orphan")
 
@@ -37,8 +38,10 @@ class Question(Base):
     __tablename__ = "questions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    theme_id = Column(String(50), ForeignKey("themes.id"), nullable=False)
+    theme_id = Column(String(50), ForeignKey("themes.id"), nullable=False, index=True)
     content = Column(Text, nullable=False)
+    # Desativado = some do jogo sem ser apagado
+    is_active = Column(Boolean, nullable=False, default=True, server_default=text("1"))
 
     theme = relationship("Theme", back_populates="questions")
 
@@ -47,9 +50,10 @@ class ImpostorScenario(Base):
     __tablename__ = "impostor_scenarios"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    theme_id = Column(String(50), ForeignKey("themes.id"), nullable=False)
+    theme_id = Column(String(50), ForeignKey("themes.id"), nullable=False, index=True)
     honest = Column(String(255), nullable=False)
     impostor_variations = Column(JSON, nullable=False) # List[str]
+    is_active = Column(Boolean, nullable=False, default=True, server_default=text("1"))
 
     theme = relationship("Theme", back_populates="impostor_scenarios")
 
@@ -58,7 +62,8 @@ class WhoAmIPersonality(Base):
     __tablename__ = "whoami_personalities"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    theme_id = Column(String(50), ForeignKey("themes.id"), nullable=False)
+    theme_id = Column(String(50), ForeignKey("themes.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True, server_default=text("1"))
 
     theme = relationship("Theme", back_populates="personalities")

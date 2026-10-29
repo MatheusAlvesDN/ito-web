@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 
 class WakeLockService {
-  private wakeLock: any = null;
+  private wakeLock: WakeLockSentinel | null = null;
   private isRequested: boolean = false;
 
   public async requestWakeLock(): Promise<void> {
@@ -10,7 +10,7 @@ class WakeLockService {
     if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
       try {
         if (!this.wakeLock) {
-          this.wakeLock = await (navigator as any).wakeLock.request('screen');
+          this.wakeLock = await navigator.wakeLock.request('screen');
           this.wakeLock.addEventListener('release', () => {
             this.wakeLock = null;
           });

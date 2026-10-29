@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import sys
@@ -5,14 +6,21 @@ import sys
 # Adiciona o diretório backend ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.core.database import SessionLocal, engine, Base
+from app.core.database import SessionLocal
+from app.core.migrations import run_migrations
 from app.models.game import Game, Theme, Question, ImpostorScenario, WhoAmIPersonality
 
-def run_seed():
+def run_seed(reset: bool = False):
+    """Popula o conteúdo dos jogos. Por padrão só age com o banco vazio, para não
+    apagar edições dos admins; reset=True apaga e recria o conteúdo (nunca os admins)."""
     print("Iniciando processo de seeding do banco de dados...")
-    Base.metadata.create_all(bind=engine)
+    run_migrations()
 
     db = SessionLocal()
+    if not reset and db.query(Game).count() > 0:
+        db.close()
+        print("O banco já tem conteúdo; nada a fazer. Use --reset para apagar e repopular.")
+        return
 
     json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "seed_data.json")
     if not os.path.exists(json_path):
@@ -23,7 +31,7 @@ def run_seed():
         data = json.load(f)
 
     try:
-        # Limpar dados antigos
+        # Limpar conteúdo antigo (tabelas de admin ficam intactas)
         db.query(WhoAmIPersonality).delete()
         db.query(ImpostorScenario).delete()
         db.query(Question).delete()
@@ -124,4 +132,6 @@ def run_seed():
         db.close()
 
 if __name__ == "__main__":
-    run_seed()
+    parser = argparse.ArgumentParser(description="Popula o banco com o conteúdo de seed_data.json.")
+    parser.add_argument("--reset", action="store_true", help="apaga todo o conteúdo dos jogos e repopula")
+    run_seed(reset=parser.parse_args().reset)

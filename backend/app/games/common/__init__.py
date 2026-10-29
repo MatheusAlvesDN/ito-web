@@ -1,0 +1,1 @@
+"""Peças reutilizadas pelos motores."""

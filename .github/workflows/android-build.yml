@@ -1,13 +1,8 @@
 name: Build Android APK
 
+# Apenas manual: o app web depende do backend (/api e /ws), que o APK não embute.
 on:
   workflow_dispatch: # Permite rodar manualmente na aba Actions
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build:

@@ -1,85 +1,79 @@
-# 🎮 PARTY GAMES - Mobile Experience
+# Party Games
 
-Uma plataforma premium de jogos de tabuleiro sociais (Party Games), projetada sob medida para dispositivos móveis. Com um visual sofisticado, interações táteis dinâmicas e transições fluidas, **Party Games** é o companheiro perfeito para animar encontros, festas e momentos entre amigos.
+Jogos de festa para jogar com os amigos, no mesmo celular (**Pass and Play**) ou cada um no seu (**Online**, numa sala com código de 4 letras). Todo o jogo roda no servidor: o navegador só mostra o que cada jogador pode ver, então segredos (o número do ITO, quem é o impostor) não vazam para os outros aparelhos.
 
-O aplicativo opera no modelo **Pass and Play** (um único celular que circula entre os jogadores), ideal para qualquer lugar e sem a necessidade de múltiplos aparelhos ou conexão à internet ativa após o carregamento.
+## Modos
 
----
+| Modo | Jogadores | Resumo |
+|---|---|---|
+| **ITO** | 2+ | Cada um recebe um número secreto e dá dicas sobre um tema; a equipe ordena as cartas sem revelar os números. Escala (1–50, 1–100, 1–1000), vidas e modo **Sabotador** opcional (votação quando as vidas acabam). |
+| **Impostor** | 3+ | Todos recebem a mesma pergunta, menos o impostor, que recebe uma parecida. Discussão com cronômetro e revelação. |
+| **Quem Sou Eu?** | 2+ | Cada um tem um personagem que os outros veem; descubra o seu com perguntas. Online, você nunca vê a própria carta até o fim da partida. |
+| **O Que Você Sabe?** | 3+ | Um jogador responde sobre si mesmo; quem acertar a resposta pontua. |
+| **Tradutor maluco** | — | Ferramenta extra: passa uma frase por vários idiomas e mostra como ela volta. |
 
-## 🕹️ Modos de Jogo Inclusos
+Os temas e o conteúdo (perguntas, cenários, personagens) ficam num banco SQLite local e são editados pelo **painel de administração** em `/admin`.
 
-### 1. ⚡ ITO Clássico (Cooperativo)
-Inspirado no aclamado jogo de cartas japonês, este modo exige sintonia e dedução do grupo.
-- **Como funciona:** Cada jogador recebe um número secreto de **1 a 100**. Um tema/situação é sorteado (ex: *"O quão útil seria este objeto em um apocalipse zumbi?"*). Cada jogador deve dar uma resposta subjetiva condizente com seu número (1 para o menos útil, 100 para o mais útil).
-- **O Desafio:** O grupo deve discutir e ordenar as cartas em ordem crescente de forma cooperativa, sem que ninguém revele o número exato diretamente.
-- **Diferencial Técnico:** Interface de ordenação interativa com suporte total a gestos tarrastáveis (Drag and Drop) via `@dnd-kit` e linha do tempo de resultados interativa.
+## Arquitetura
 
-### 2. 👻 IMPOSTOR (Dedução e Blefe)
-Um jogo de intriga, suspeitas e inteligência social para no mínimo 3 jogadores.
-- **Como funciona:** A maioria dos jogadores recebe uma pergunta secreta idêntica (ex: *"Cães de Estimação"*), enquanto um deles (o Impostor sorteado) recebe uma pergunta sutilmente alterada (ex: *"Animais da Selva"*).
-- **O Desafio:** Os jogadores fazem perguntas subjetivas entre si. O Impostor deve blefar e se integrar às respostas da maioria para não ser descoberto, enquanto o grupo honesto tenta farejar quem está deslocado do contexto real.
-- **Diferencial Técnico:** Layout imersivo de revelação de papel com gradientes neons, cards de discussão estilo sala de bate-papo futurista e painel revelador de identidade.
-
-### 3. 🔍 QUEM SOU EU? (Adivinhação Casual)
-O clássico jogo da "carta na testa" adaptado digitalmente.
-- **Como funciona:** Os participantes preparam as cartas na tela e o jogador da vez encosta o celular na testa sem olhar. Os demais visualizam qual personagem ele tirou (ex: *"Harry Potter"*, *"Darth Vader"* ou figuras históricas/populares).
-- **O Desafio:** O jogador da vez faz perguntas de Sim/Não ou recebe dicas subjetivas do grupo para tentar descobrir sua própria identidade secreta.
-- **Diferencial Técnico:** Telas de aviso anti-olhada ("Atenção: Não olhe para a tela!"), cards de personagem flutuantes com gradientes imersivos e controle tátil de acertos/pontuação fluida.
-
-### 4. 💬 O QUE VOCÊ SABE? (Perguntas e Convivência)
-Um jogo para quebrar o gelo, testar afinidades e descobrir curiosidades sobre os amigos.
-- **Como funciona:** Perguntas provocativas ou engraçadas são apresentadas para o grupo ou para um jogador da vez (ex: *"Qual é o meu maior medo irracional?"*, *"O que eu faria primeiro se ganhasse na loteria?"*).
-- **O Desafio:** Os amigos debatem e tentam adivinhar a resposta real ou comparar percepções sobre a personalidade de cada um.
-- **Diferencial Técnico:** Suporte a geração ilimitada de temas via IA (Google Gemini), temas visuais dedicados em tons Rose/Pink e interface responsiva de cards de conversa.
-
-### 5. 📞 TELEFONE SEM FIO / TRADUTOR (Cadeia de Idiomas)
-O clássico telefone sem fio, mas potencializado pela inteligência artificial e tradução em cadeia.
-- **Como funciona:** Uma frase inicial (poesia, ditado popular ou citação) passa por uma sequência automática de traduções entre diversos idiomas ao redor do mundo (ex: Português → Alemão → Japonês → Árabe → Português).
-- **O Desafio:** Ver como o significado original é completamente distorcido e transformado em algo hilário ao retornar para o idioma de origem.
-- **Diferencial Técnico:** Geração inteligente de frases com IA, visualização animada de bandeiras e idiomas intermediários, além de presets de rotas globais.
-
----
-
-## 🎨 Design System e Estética Premium
-
-O aplicativo foi completamente reformulado para proporcionar uma experiência **Premium e Moderna**:
-- **Harmonia Visual:** Interface de alto contraste projetada em Slate-950 (fundo escuro profundo) com destaques e neon adaptativos para cada modo de jogo (Amarelo/Ouro para Clássico, Roxo/Violeta para Impostor, Esmeralda/Teal para Quem Sou Eu, Rose/Pink para O Que Você Sabe? e Azul/Blue para Telefone Sem Fio).
-- **Tipografia Moderna:** Integração refinada do Google Fonts, utilizando as famílias **Outfit** (títulos marcantes e arrojados) e **Plus Jakarta Sans** (texto de leitura e botões com excelente ergonomia visual).
-- **Efeito Glassmorphism:** Cabeçalhos, alertas e menus flutuantes implementados com desfoque de fundo inteligente (`backdrop-blur-md`) e bordas translúcidas finas, dando profundidade tridimensional.
-- **Layout Responsivo Flex (`shrink-0`):** Nova arquitetura que bloqueia rolagens concorrentes indesejadas (`100dvh` / `overflow-hidden` global) e posiciona os botões principais de rodapé em layout flexível nativo. Isso assegura que **nenhum botão ou elemento seja cortado em smartphones menores** e as listas internas rolem de forma independente e leve.
-- **Animações Fluidas & Áudio Sintético:** Efeitos de flip de cartas 3D simuladas por CSS, sons de vitória, suspense e clique via Web Audio API (`audioService.ts`), além de movimentos suaves de entrada (`animate-fade-in` e `animate-float`) para feedbacks táteis naturais.
-
----
-
-## 🛠️ Stack Tecnológica
-
-O projeto foi modernizado para uma arquitetura Web completa com backend em Python:
-1. **Frontend:** React 19 + TypeScript + Tailwind CSS v3 + Vite.
-2. **Backend:** Python 3.12 + FastAPI + SQLAlchemy 2.0 + WebSockets.
-3. **Banco de Dados:** SQLite (desenvolvimento) / PostgreSQL (produção).
-4. **Drag & Drop:** `@dnd-kit/core` e `@dnd-kit/sortable`.
-5. **Multiplayer Online:** Salas e sincronização em tempo real via WebSockets.
-
----
-
-## 🚀 Como Executar o Projeto
-
-### 1. Iniciar o Backend em Python:
-No diretório raiz:
-```bash
-npm run backend
 ```
-Isso iniciará a API FastAPI em `http://localhost:8000` com documentação interativa em `http://localhost:8000/docs`.
+frontend (React 19 + Vite + Tailwind)            backend (FastAPI, um processo)
+ src/app/        rotas, tema claro/escuro          app/api/v1/games.py       jogos e temas ativos (público)
+ src/ui/         design system marrom/laranja      app/api/v1/admin/         painel admin (login + CRUD)
+ src/features/   home, play (lobby/sala), games,   app/games/                um motor por modo (regras)
+                 admin, translator                 app/websockets/           salas e protocolo (/ws)
+ src/lib/        api, adminApi, room client        alembic/                  migrações do banco
+```
 
-*(Opcional) Para repopular o banco de dados inicial a qualquer momento:*
+- **Motores de jogo** (`backend/app/games/`): lógica pura e testável de cada modo. Regras, ações e o formato do que cada jogador recebe estão em [`backend/app/games/PROTOCOL.md`](backend/app/games/PROTOCOL.md).
+- **Salas** (`backend/app/websockets/`): criação e entrada em salas, reconexão (o jogador volta para a mesma vaga ao recarregar a página), troca de líder e cronômetros no servidor. O contrato com o cliente está em [`backend/app/websockets/PROTOCOL.md`](backend/app/websockets/PROTOCOL.md).
+- **Pass and Play** também passa pelo servidor: é uma sala com um único aparelho controlando todos os jogadores, então o servidor precisa estar rodando.
+- **Frontend**: o design system está documentado em [`src/ui/README.md`](src/ui/README.md) e as telas de jogo em [`src/features/games/README.md`](src/features/games/README.md).
+
+## Como executar
+
+### Linux / macOS
 ```bash
+./run.sh                 # instala o que faltar e inicia backend + frontend (Ctrl+C para os dois)
+./run.sh admin <usuario> # cria uma conta de admin do painel (pede a senha)
+./run.sh seed            # popula o banco (só se estiver vazio)
+./run.sh seed --reset    # apaga o conteúdo dos jogos e repopula (contas de admin ficam)
+./run.sh backend         # só o backend  (http://localhost:8000, docs em /docs)
+./run.sh frontend        # só o frontend (http://localhost:5173)
+```
+
+### Windows
+Use `setup.bat` (instalação) e `run.bat` (menu para iniciar). Para criar um admin: `npm run admin -- <usuario>`.
+
+### Manualmente
+```bash
+npm install
+python -m venv backend/.venv
+backend/.venv/bin/pip install -r backend/requirements-dev.txt   # Windows: backend\.venv\Scripts\pip
 npm run seed
+npm run admin -- <usuario>
+npm run backend      # terminal 1
+npm run dev          # terminal 2
 ```
+O banco é migrado automaticamente (Alembic) ao iniciar o backend. O Vite redireciona `/api` e `/ws` para o backend.
 
-### 2. Iniciar o Frontend Web:
-Em outro terminal no diretório raiz:
+## Painel de administração
+
+Acesse `http://localhost:5173/admin` com uma conta criada por `./run.sh admin <usuario>`. Nele dá para:
+- ativar/desativar jogos e editar nome e descrição;
+- criar, editar, ativar/desativar e apagar temas;
+- adicionar, editar, ativar/desativar e apagar itens de cada tema, inclusive **importar em lote** (uma linha por item; no Impostor, `pergunta dos honestos | variação 1; variação 2`);
+- gerenciar outras contas de admin.
+
+As alterações valem a partir da próxima rodada das partidas em andamento.
+
+## Testes
 ```bash
-npm run dev
+npm run test:backend          # motores, salas/WebSocket, admin e API (pytest)
+npx tsc -b && npm run lint    # typecheck e lint do frontend
+npm run build                 # build de produção
 ```
-Acesse `http://localhost:5173` no seu navegador. As chamadas `/api` e conexões `/ws` são automaticamente direcionadas para o backend via proxy.
 
+## Variáveis de ambiente (opcionais)
+- `backend/.env`: `DATABASE_URL`, `CORS_ORIGINS` (lista JSON das origens permitidas em produção).
+- `.env.local` (frontend): `VITE_WS_URL`, se o backend estiver em outro domínio.

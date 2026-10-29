@@ -2,17 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------
+ * Design tokens (Party Games v2). Valores são canais RGB ("r g b") para
+ * permitir opacidade no Tailwind: bg-brand/10, border-line/60 etc.
+ * Claro = padrão; escuro via [data-theme="dark"] ou preferência do sistema
+ * quando data-theme="system"/ausente. Veja src/ui/README.md.
+ * ------------------------------------------------------------------ */
 :root {
-  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --c-bg: 251 245 238;          /* #FBF5EE creme */
+  --c-surface: 255 255 255;     /* #FFFFFF */
+  --c-surface-2: 244 234 223;   /* #F4EADF superfície sutil / inputs */
+  --c-ink: 59 36 22;            /* #3B2416 texto principal */
+  --c-muted: 110 86 70;         /* #6E5646 texto secundário (6.3:1 no bg) */
+  --c-line: 230 214 198;        /* #E6D6C6 bordas */
+  --c-wood: 122 74 42;          /* #7A4A2A marrom */
+  --c-brand: 232 115 26;        /* #E8731A laranja */
+  --c-brand-hover: 201 95 16;   /* #C95F10 */
+  --c-brand-strong: 168 76 8;   /* #A84C08 laranja para TEXTO sobre bg/surface */
+  --c-brand-ink: 42 22 8;       /* #2A1608 texto sobre fundo laranja */
+  --c-success: 46 122 71;       /* #2E7A47 */
+  --c-danger: 179 48 42;        /* #B3302A */
+  --c-warning: 143 90 5;        /* #8F5A05 */
+  --c-shadow: 59 36 22;
+
+  font-family: 'Plus Jakarta Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light;
-  background-color: #F4F5F9; /* Novo background claro (party-bg) */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tema escuro explícito */
+:root[data-theme="dark"] {
+  --c-bg: 28 19 13;             /* #1C130D */
+  --c-surface: 42 29 20;        /* #2A1D14 */
+  --c-surface-2: 54 39 27;      /* #36271B */
+  --c-ink: 245 233 220;         /* #F5E9DC */
+  --c-muted: 187 166 147;       /* #BBA693 */
+  --c-line: 74 55 39;           /* #4A3727 */
+  --c-wood: 168 111 69;         /* #A86F45 */
+  --c-brand: 240 138 52;        /* #F08A34 */
+  --c-brand-hover: 245 160 90;  /* #F5A05A */
+  --c-brand-strong: 245 160 90; /* #F5A05A */
+  --c-brand-ink: 28 19 13;      /* #1C130D */
+  --c-success: 114 196 143;     /* #72C48F */
+  --c-danger: 242 134 122;      /* #F2867A */
+  --c-warning: 234 182 80;      /* #EAB650 */
+  --c-shadow: 0 0 0;
+  color-scheme: dark;
+}
+
+/* Tema escuro seguindo o sistema (data-theme ausente ou "system") */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --c-bg: 28 19 13;
+    --c-surface: 42 29 20;
+    --c-surface-2: 54 39 27;
+    --c-ink: 245 233 220;
+    --c-muted: 187 166 147;
+    --c-line: 74 55 39;
+    --c-wood: 168 111 69;
+    --c-brand: 240 138 52;
+    --c-brand-hover: 245 160 90;
+    --c-brand-strong: 245 160 90;
+    --c-brand-ink: 28 19 13;
+    --c-success: 114 196 143;
+    --c-danger: 242 134 122;
+    --c-warning: 234 182 80;
+    --c-shadow: 0 0 0;
+    color-scheme: dark;
+  }
 }
 
 /* Configuração Essencial para App Full Screen e sem bounces irritantes no mobile */
@@ -22,10 +84,12 @@ html, body {
   width: 100%;
   height: 100%;
   height: 100dvh;
-  overflow: hidden; 
-  background-color: #F4F5F9;
+  overflow: hidden;
+  background-color: rgb(var(--c-bg));
+  color: rgb(var(--c-ink));
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Garante que o container do React ocupe tudo sem cortes */
@@ -36,6 +100,18 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+::selection {
+  background: rgb(var(--c-brand) / 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Scrollbars Minimalistas e Premium */
@@ -49,12 +125,12 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
+  background: rgb(var(--c-muted) / 0.3);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgb(var(--c-muted) / 0.5);
 }
 
 /* Utilitários 3D para o Flip do Card de Números */
@@ -151,4 +227,4 @@ html, body {
 
 .animate-reaction {
   animation: floatUpReaction 3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
+}

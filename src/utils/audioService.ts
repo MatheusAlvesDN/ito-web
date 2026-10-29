@@ -19,7 +19,7 @@ class AudioService {
   // Inicializa o contexto de áudio sob demanda (atendendo políticas de autoplay de navegadores)
   private initContext() {
     if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
       }
@@ -38,7 +38,7 @@ class AudioService {
     this.muted = val;
     try {
       localStorage.setItem(this.storageKey, val.toString());
-    } catch {}
+    } catch { /* armazenamento indisponível */ }
   }
 
   public toggleMute(): boolean {

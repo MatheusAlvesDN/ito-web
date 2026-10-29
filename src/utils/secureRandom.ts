@@ -27,3 +27,15 @@ export function getSecureRandomInt(min: number, max: number): number {
   
   return min + (randomValue % range);
 }
+
+/**
+ * Returns a shuffled copy of the array (Fisher-Yates), without the bias of sort(() => 0.5 - Math.random()).
+ */
+export function shuffle<T>(items: readonly T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = getSecureRandomInt(0, i);
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}

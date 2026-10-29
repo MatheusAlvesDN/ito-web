@@ -1,5 +1,5 @@
 from typing import Optional, List, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ThemeOut(BaseModel):
     id: str
@@ -12,9 +12,9 @@ class ThemeOut(BaseModel):
     button_color: Optional[str] = None
     icon: str
     is_active: bool
+    item_count: int = 0  # itens ativos do tema
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class GameOut(BaseModel):
     id: str
@@ -23,34 +23,23 @@ class GameOut(BaseModel):
     icon: str
     themes: List[ThemeOut] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ImpostorScenarioOut(BaseModel):
     id: int
     honest: str
     impostor_variations: List[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class WhoAmIPersonalityOut(BaseModel):
     id: int
     name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class QuestionOut(BaseModel):
     id: int
     content: str
 
-    class Config:
-        from_attributes = True
-
-class GameContentOut(BaseModel):
-    game_id: str
-    theme_id: str
-    questions: Optional[List[str]] = None
-    scenarios: Optional[List[dict]] = None
-    personalities: Optional[List[str]] = None
+    model_config = ConfigDict(from_attributes=True)
